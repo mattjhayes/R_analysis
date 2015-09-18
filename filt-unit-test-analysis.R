@@ -2,7 +2,7 @@
 
 # Run in rstudio with:
 
-# source("/home/bob/analysis/filt-unit-test-analysis.R")
+# source("~/R_analysis/filt-unit-test-analysis.R")
 
 # Imports:
 libs <- c('ggplot2', 'latticeExtra', 'gridExtra', 'MASS', 

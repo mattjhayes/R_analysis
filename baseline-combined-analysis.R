@@ -2,11 +2,11 @@
 
 # Run in rstudio with:
 
-# source("~/analysis/baseline-combined-analysis.R")
+# source("~/R_analysis/baseline-combined-analysis.R")
 
 # Imports:
 libs <- c('ggplot2', 'latticeExtra', 'gridExtra', 'MASS', 
-          'colorspace', 'plyr', 'Hmisc', 'scales')
+          'colorspace', 'plyr', 'Hmisc', 'scales', 'zoo')
 lapply(libs, require, character.only = T)
 
 # Base directory where results data is stored:
@@ -84,6 +84,8 @@ for (i in 1:length(files_list_filt)) {
   # Accumulate the additional data rows:
   df_filt = rbind(df_filt, d)
 }
+# Set Time column to POSIXct data type:
+df_filt$Time <- as.POSIXct(df_filt$Time)
 
 # ===================== cxn-close analysis:
 files_cxn_close <- vector()
@@ -133,17 +135,70 @@ for (i in 1:length(files_list_cxn_close)) {
   # Accumulate the additional data rows:
   df_cxn_close = rbind(df_cxn_close, d)
 }
+# Set Time column to POSIXct data type:
+df_cxn_close$Time <- as.POSIXct(df_cxn_close$Time)
+
 
 # Add the filt load actual rate to the cxn-close data frame:
 # First, need to load the correct filt data into a data frame:
-for (dir_path in levels(df_cxn_close$Dir_Path)) {
-  print(paste0("Dir path is ", dir_path))
-}
+#for (dir_path in levels(df_cxn_close$Dir_Path)) {
+#  print(paste0("Dir path is ", dir_path))
+#}
 #incol<- filt_results[,2] # select the column to search
 #outcol <- 1 # select the element of the found row you want to get
 #print("Test 1 results are")
 #filt_results[ rev(order(incol<hort_timestamp))[1] ,outcol]
 
+# =================== CXN-CLOSE - FILT MERGE GOODNESS ==================
+# Use merge to create a combined cxn-close/filt data frame:
+df_cxn_close_filt <-merge(df_cxn_close, df_filt, all=T, by="Time")
+print("initial merge gives this...")
+head(df_cxn_close_filt)
 
+# Remove leading rows with NA for filt_Actual_Rate as they precede the
+#  start of the test:
+first_row <- which.min(is.na(df_cxn_close_filt$Previous_Actual_Rate))
+print(paste0("First row with filt test running is ", first_row))
+df_cxn_close_filt = df_cxn_close_filt[-(1:(first_row-1)),]
 
+print("Zoo time! Replace the NAs with next value in column")
+# Use zoo package na.locf
+df_cxn_close_filt$Previous_Actual_Rate <- na.locf(df_cxn_close_filt$Previous_Actual_Rate, fromLast = TRUE, na.rm = FALSE)
+
+print("remove NAs")
+# subset df with only rows that have complete data in columns 1 & 2:
+df_cxn_close_filt <- df_cxn_close_filt[complete.cases(df_cxn_close_filt[,"Object_Retrieval_Time"]),]
+
+print("remove superfluous columns and tidy up names")
+drops <- c("Test_Type.y","Dir_Path.y")
+df_cxn_close_filt <- df_cxn_close_filt[,!(names(df_cxn_close_filt) %in% drops)]
+colnames(df_cxn_close_filt)[names(df_cxn_close_filt)=="Test_Type.x"] <- "Test_Type"
+colnames(df_cxn_close_filt)[names(df_cxn_close_filt)=="Dir_Path.x"] <- "Dir_Path"
+colnames(df_cxn_close_filt)[names(df_cxn_close_filt)=="Previous_Actual_Rate"] <- "Load_Rate"
+
+# ============================= CHARTING ===============================
+
+# Actual Rate:
+# Scatter lattice with panel per test type and R squared stat analysis:
+scatter.lattice.ar <- xyplot(Object_Retrieval_Time ~ Load_Rate | Test_Type, 
+                          data = df_cxn_close_filt,
+                          main="Connection Close Retrieval Time vs New Flows Load by Test Type",
+                          panel = function(x, y, ...) {
+                            panel.xyplot(x, y, ...)
+                            lm1 <- lm(y ~ x)
+                            lm1sum <- summary(lm1)
+                            r2 <- lm1sum$adj.r.squared
+                            panel.abline(a = lm1$coefficients[1], 
+                                         b = lm1$coefficients[2])
+                            panel.text(labels = 
+                                         bquote(italic(R)^2 == 
+                                                  .(format(r2, 
+                                                           digits = 3))),
+                                       x = 30, y = 1000)
+                            },
+                          xscale.components = xscale.components.subticks,
+                          yscale.components = yscale.components.subticks,
+                          as.table = TRUE)
+p = scatter.lattice.ar
+print (p)
 
