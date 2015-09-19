@@ -13,8 +13,7 @@ lapply(libs, require, character.only = T)
 base_dir <- "~/results/baseline-combined/"
 
 # Ask for the sub-directory that the results are in:
-#test_dir_1 <- readline("What is name of directory?")
-test_dir_1 <- "20150916202810"
+test_dir_1 <- readline("What is name of directory?")
 
 base_dir_2 <- paste(base_dir, test_dir_1, sep = '')
 
@@ -87,6 +86,84 @@ for (i in 1:length(files_list_filt)) {
 # Set Time column to POSIXct data type:
 df_filt$Time <- as.POSIXct(df_filt$Time)
 
+# ===================== Controller OS analysis:
+files_ct_mosp <- vector()
+test_types_ct_mosp <- vector()
+dir_path_ct_mosp <- vector()
+
+for (test_type in files_dir_2) {
+  base_dir_3 <- paste(base_dir_2, test_type, sep = '/')
+  files_dir_3 <- list.files(path=base_dir_3)
+  for (test_timestamp in files_dir_3) {
+    base_dir_4 <- paste(base_dir_3, test_timestamp, sep = '/')
+    files_dir_4 <- list.files(path=base_dir_4)
+    if (is.element("ct1.example.com-mosp.csv", files_dir_4)) {
+      full_path = paste(base_dir_4, "ct1.example.com-mosp.csv", sep = '/')
+      # Append the full path of the file to the list
+      files_ct_mosp <- c(files_ct_mosp, full_path)
+      # Use test_types to hold mapping between full file path and type of test:
+      test_types_ct_mosp[full_path] <- test_type
+      # Store the directory path:
+      dir_path_ct_mosp[full_path] <- base_dir_4
+    }
+  }
+}
+
+print ("Reading controller mosp result CSV files into a list")
+# Read the controller mosp result CSV files into a list:
+files_list_ct_mosp <- lapply(files_ct_mosp, read.csv)
+
+# Data frame for controller mosp results:
+# Set a blank data frame to put our results into:
+df_ct_mosp = data.frame()
+for (i in 1:length(files_list_ct_mosp)) {
+  test_type <- unname(test_types_ct_mosp[i])
+  dir_path <- unname(dir_path_ct_mosp[i])
+  x <- files_list_ct_mosp[[i]]$time
+  y1 <- files_list_ct_mosp[[i]]$ct1.cpu
+  y2 <- files_list_ct_mosp[[i]]$ct1.swap.in
+  y3 <- files_list_ct_mosp[[i]]$ct1.swap.out
+  y4 <- files_list_ct_mosp[[i]]$ct1.pkt.in
+  y5 <- files_list_ct_mosp[[i]]$ct1.pkt.out
+  #*** fill vector z1 with the test type:
+  z1 <- rep(test_type, length(x))
+  #*** fill vector z2 with the directory path:
+  z2 <- rep(dir_path, length(x))
+  d = data.frame(x, y1, y2, y3, y4, y5, z1, z2)
+  # Set appropriate column names.
+  colnames(d) <- c("Time", "Controller_CPU", "Controller_Swap_In", "Controller_Swap_Out", "Controller_Pkt_In", "Controller_Pkt_Out", "Test_Type", "Dir_Path")
+  # Accumulate the additional data rows:
+  df_ct_mosp = rbind(df_ct_mosp, d)
+}
+# Set Time column to POSIXct data type:
+df_ct_mosp$Time <- as.POSIXct(df_ct_mosp$Time)
+
+# =================== CONTROLLER MOSP - FILT MERGE GOODNESS ==================
+# Use merge to create a combined controller mosp/filt data frame:
+print("Controller mosp: Doing initial controller mosp/filt merge...")
+df_ct_mosp_filt <-merge(df_ct_mosp, df_filt, all=T, by="Time")
+
+# Remove leading rows with NA for filt_Actual_Rate as they precede the
+#  start of the test:
+first_row <- which.min(is.na(df_ct_mosp_filt$Previous_Actual_Rate))
+print(paste0("Controller mosp: First row with filt test running is ", first_row))
+df_ct_mosp_filt = df_ct_mosp_filt[-(1:(first_row-1)),]
+
+print("Controller mosp: Zoo time! Replace the NAs with next value in column")
+# Use zoo package na.locf
+df_ct_mosp_filt$Previous_Actual_Rate <- na.locf(df_ct_mosp_filt$Previous_Actual_Rate, fromLast = TRUE, na.rm = FALSE)
+
+print("Controller mosp: remove NAs")
+# subset df with only rows that have complete data in column 2:
+df_ct_mosp_filt <- df_ct_mosp_filt[complete.cases(df_ct_mosp_filt[, 2]),]
+
+print("Controller mosp: remove superfluous columns and tidy up names")
+drops <- c("Test_Type.y","Dir_Path.y")
+df_ct_mosp_filt <- df_ct_mosp_filt[,!(names(df_ct_mosp_filt) %in% drops)]
+colnames(df_ct_mosp_filt)[names(df_ct_mosp_filt)=="Test_Type.x"] <- "Test_Type"
+colnames(df_ct_mosp_filt)[names(df_ct_mosp_filt)=="Dir_Path.x"] <- "Dir_Path"
+colnames(df_ct_mosp_filt)[names(df_ct_mosp_filt)=="Previous_Actual_Rate"] <- "Load_Rate"
+
 # ===================== cxn-close analysis:
 files_cxn_close <- vector()
 test_types_cxn_close <- vector()
@@ -138,49 +215,116 @@ for (i in 1:length(files_list_cxn_close)) {
 # Set Time column to POSIXct data type:
 df_cxn_close$Time <- as.POSIXct(df_cxn_close$Time)
 
-
-# Add the filt load actual rate to the cxn-close data frame:
-# First, need to load the correct filt data into a data frame:
-#for (dir_path in levels(df_cxn_close$Dir_Path)) {
-#  print(paste0("Dir path is ", dir_path))
-#}
-#incol<- filt_results[,2] # select the column to search
-#outcol <- 1 # select the element of the found row you want to get
-#print("Test 1 results are")
-#filt_results[ rev(order(incol<hort_timestamp))[1] ,outcol]
-
 # =================== CXN-CLOSE - FILT MERGE GOODNESS ==================
 # Use merge to create a combined cxn-close/filt data frame:
 df_cxn_close_filt <-merge(df_cxn_close, df_filt, all=T, by="Time")
-print("initial merge gives this...")
+print("Client cxn-close: initial merge gives this...")
 head(df_cxn_close_filt)
 
 # Remove leading rows with NA for filt_Actual_Rate as they precede the
 #  start of the test:
 first_row <- which.min(is.na(df_cxn_close_filt$Previous_Actual_Rate))
-print(paste0("First row with filt test running is ", first_row))
+print(paste0("Client cxn-close: First row with filt test running is ", first_row))
 df_cxn_close_filt = df_cxn_close_filt[-(1:(first_row-1)),]
 
-print("Zoo time! Replace the NAs with next value in column")
+print("Client cxn-close: Zoo time! Replace the NAs with next value in column")
 # Use zoo package na.locf
 df_cxn_close_filt$Previous_Actual_Rate <- na.locf(df_cxn_close_filt$Previous_Actual_Rate, fromLast = TRUE, na.rm = FALSE)
 
-print("remove NAs")
+print("Client cxn-close: remove NAs")
 # subset df with only rows that have complete data in columns 1 & 2:
 df_cxn_close_filt <- df_cxn_close_filt[complete.cases(df_cxn_close_filt[,"Object_Retrieval_Time"]),]
 
-print("remove superfluous columns and tidy up names")
+print("Client cxn-close: remove superfluous columns and tidy up names")
 drops <- c("Test_Type.y","Dir_Path.y")
 df_cxn_close_filt <- df_cxn_close_filt[,!(names(df_cxn_close_filt) %in% drops)]
 colnames(df_cxn_close_filt)[names(df_cxn_close_filt)=="Test_Type.x"] <- "Test_Type"
 colnames(df_cxn_close_filt)[names(df_cxn_close_filt)=="Dir_Path.x"] <- "Dir_Path"
 colnames(df_cxn_close_filt)[names(df_cxn_close_filt)=="Previous_Actual_Rate"] <- "Load_Rate"
 
+# ===================== cxn-keepalive analysis:
+files_cxn_keepalive <- vector()
+test_types_cxn_keepalive <- vector()
+dir_path_cxn_keepalive <- vector()
+
+for (test_type in files_dir_2) {
+  base_dir_3 <- paste(base_dir_2, test_type, sep = '/')
+  files_dir_3 <- list.files(path=base_dir_3)
+  for (test_timestamp in files_dir_3) {
+    base_dir_4 <- paste(base_dir_3, test_timestamp, sep = '/')
+    files_dir_4 <- list.files(path=base_dir_4)
+    if (is.element("pc1.example.com-hort-cxn-keepalive.csv", files_dir_4)) {
+      full_path = paste(base_dir_4, "pc1.example.com-hort-cxn-keepalive.csv", sep = '/')
+      # Append the full path of the file to the list
+      files_cxn_keepalive <- c(files_cxn_keepalive, full_path)
+      # Use test_types to hold mapping between full file path and type of test:
+      test_types_cxn_keepalive[full_path] <- test_type
+      # Store the directory path:
+      dir_path_cxn_keepalive[full_path] <- base_dir_4
+    }
+  }
+}
+
+print ("Reading hort client cxn-keepalive result CSV files into a list")
+# Read the pc1 connection keepalive csv files into a list:
+files_list_cxn_keepalive <- lapply(files_cxn_keepalive, read.csv)
+
+# Data frame for cxn-keepalive object retrieval times:
+# Pull out the values we need and merge into a single data frame
+#  with a column of retrieval times, a column for test type,
+#  indexed against target rate:
+# Set a blank data frame to put our results into:
+df_cxn_keepalive = data.frame()
+for (i in 1:length(files_list_cxn_keepalive)) {
+  test_type <- unname(test_types_cxn_keepalive[i])
+  dir_path <- unname(dir_path_cxn_keepalive[i])
+  x <- files_list_cxn_keepalive[[i]]$time
+  y <- files_list_cxn_keepalive[[i]]$pc1.cxn.keep.alive.retrieval.time
+  #*** fill vector z1 with the test type:
+  z1 <- rep(test_type, length(x))
+  #*** fill vector z2 with the directory path:
+  z2 <- rep(dir_path, length(x))
+  d = data.frame(x, y, z1, z2)
+  # Set appropriate column names.
+  colnames(d) <- c("Time", "Object_Retrieval_Time", "Test_Type", "Dir_Path")
+  # Accumulate the additional data rows:
+  df_cxn_keepalive = rbind(df_cxn_keepalive, d)
+}
+# Set Time column to POSIXct data type:
+df_cxn_keepalive$Time <- as.POSIXct(df_cxn_keepalive$Time)
+
+# =================== CXN-KEEPALIVE - FILT MERGE GOODNESS ==================
+# Use merge to create a combined cxn-keepalive/filt data frame:
+df_cxn_keepalive_filt <-merge(df_cxn_keepalive, df_filt, all=T, by="Time")
+print("Client cxn-keepalive: initial merge gives this...")
+head(df_cxn_keepalive_filt)
+
+# Remove leading rows with NA for filt_Actual_Rate as they precede the
+#  start of the test:
+first_row <- which.min(is.na(df_cxn_keepalive_filt$Previous_Actual_Rate))
+print(paste0("Client cxn-keepalive: First row with filt test running is ", first_row))
+df_cxn_keepalive_filt = df_cxn_keepalive_filt[-(1:(first_row-1)),]
+
+print("Client cxn-keepalive: Zoo time! Replace the NAs with next value in column")
+# Use zoo package na.locf
+df_cxn_keepalive_filt$Previous_Actual_Rate <- na.locf(df_cxn_keepalive_filt$Previous_Actual_Rate, fromLast = TRUE, na.rm = FALSE)
+
+print("Client cxn-keepalive: remove NAs")
+# subset df with only rows that have complete data in columns 1 & 2:
+df_cxn_keepalive_filt <- df_cxn_keepalive_filt[complete.cases(df_cxn_keepalive_filt[,"Object_Retrieval_Time"]),]
+
+print("Client cxn-keepalive: remove superfluous columns and tidy up names")
+drops <- c("Test_Type.y","Dir_Path.y")
+df_cxn_keepalive_filt <- df_cxn_keepalive_filt[,!(names(df_cxn_keepalive_filt) %in% drops)]
+colnames(df_cxn_keepalive_filt)[names(df_cxn_keepalive_filt)=="Test_Type.x"] <- "Test_Type"
+colnames(df_cxn_keepalive_filt)[names(df_cxn_keepalive_filt)=="Dir_Path.x"] <- "Dir_Path"
+colnames(df_cxn_keepalive_filt)[names(df_cxn_keepalive_filt)=="Previous_Actual_Rate"] <- "Load_Rate"
+
 # ============================= CHARTING ===============================
 
-# Actual Rate:
+print("Client cxn-close: creating chart")
 # Scatter lattice with panel per test type and R squared stat analysis:
-scatter.lattice.ar <- xyplot(Object_Retrieval_Time ~ Load_Rate | Test_Type, 
+scatter.lattice.cxn_close <- xyplot(Object_Retrieval_Time ~ Load_Rate | Test_Type, 
                           data = df_cxn_close_filt,
                           main="Connection Close Retrieval Time vs New Flows Load by Test Type",
                           panel = function(x, y, ...) {
@@ -199,6 +343,102 @@ scatter.lattice.ar <- xyplot(Object_Retrieval_Time ~ Load_Rate | Test_Type,
                           xscale.components = xscale.components.subticks,
                           yscale.components = yscale.components.subticks,
                           as.table = TRUE)
-p = scatter.lattice.ar
+p = scatter.lattice.cxn_close
+print (p)
+
+print("Client cxn-keepalive: creating chart")
+# Scatter lattice with panel per test type and R squared stat analysis:
+scatter.lattice.cxn_keepalive <- xyplot(Object_Retrieval_Time ~ Load_Rate | Test_Type, 
+                          data = df_cxn_keepalive_filt,
+                          main="Connection Keepalive Retrieval Time vs New Flows Load by Test Type",
+                          panel = function(x, y, ...) {
+                            panel.xyplot(x, y, ...)
+                            lm1 <- lm(y ~ x)
+                            lm1sum <- summary(lm1)
+                            r2 <- lm1sum$adj.r.squared
+                            panel.abline(a = lm1$coefficients[1], 
+                                         b = lm1$coefficients[2])
+                            panel.text(labels = 
+                                         bquote(italic(R)^2 == 
+                                                  .(format(r2, 
+                                                           digits = 3))),
+                                       x = 30, y = 1000)
+                            },
+                          xscale.components = xscale.components.subticks,
+                          yscale.components = yscale.components.subticks,
+                          as.table = TRUE)
+p = scatter.lattice.cxn_keepalive
+print (p)
+
+print("Controller mosp: creating CPU chart")
+# Scatter lattice with panel per test type and R squared stat analysis:
+scatter.lattice.contr_cpu <- xyplot(Controller_CPU ~ Load_Rate | Test_Type, 
+                          data = df_ct_mosp_filt,
+                          main="Controller CPU vs New Flows Load by Test Type",
+                          panel = function(x, y, ...) {
+                            panel.xyplot(x, y, ...)
+                            lm1 <- lm(y ~ x)
+                            lm1sum <- summary(lm1)
+                            r2 <- lm1sum$adj.r.squared
+                            panel.abline(a = lm1$coefficients[1], 
+                                         b = lm1$coefficients[2])
+                            panel.text(labels = 
+                                         bquote(italic(R)^2 == 
+                                                  .(format(r2, 
+                                                           digits = 3))),
+                                       x = 30, y = 1000)
+                            },
+                          xscale.components = xscale.components.subticks,
+                          yscale.components = yscale.components.subticks,
+                          as.table = TRUE)
+p = scatter.lattice.contr_cpu
+print (p)
+
+print("Controller mosp: creating Swap Out chart")
+# Scatter lattice with panel per test type and R squared stat analysis:
+scatter.lattice.contr_so <- xyplot(Controller_Swap_Out ~ Load_Rate | Test_Type, 
+                          data = df_ct_mosp_filt,
+                          main="Controller Swap Out vs New Flows Load by Test Type",
+                          panel = function(x, y, ...) {
+                            panel.xyplot(x, y, ...)
+                            lm1 <- lm(y ~ x)
+                            lm1sum <- summary(lm1)
+                            r2 <- lm1sum$adj.r.squared
+                            panel.abline(a = lm1$coefficients[1], 
+                                         b = lm1$coefficients[2])
+                            panel.text(labels = 
+                                         bquote(italic(R)^2 == 
+                                                  .(format(r2, 
+                                                           digits = 3))),
+                                       x = 30, y = 1000)
+                            },
+                          xscale.components = xscale.components.subticks,
+                          yscale.components = yscale.components.subticks,
+                          as.table = TRUE)
+p = scatter.lattice.contr_so
+print (p)
+
+print("Controller mosp: creating Packet In chart")
+# Scatter lattice with panel per test type and R squared stat analysis:
+scatter.lattice.contr_pi <- xyplot(Controller_Pkt_In ~ Load_Rate | Test_Type, 
+                          data = df_ct_mosp_filt,
+                          main="Controller Packets In vs New Flows Load by Test Type",
+                          panel = function(x, y, ...) {
+                            panel.xyplot(x, y, ...)
+                            lm1 <- lm(y ~ x)
+                            lm1sum <- summary(lm1)
+                            r2 <- lm1sum$adj.r.squared
+                            panel.abline(a = lm1$coefficients[1], 
+                                         b = lm1$coefficients[2])
+                            panel.text(labels = 
+                                         bquote(italic(R)^2 == 
+                                                  .(format(r2, 
+                                                           digits = 3))),
+                                       x = 30, y = 1000)
+                            },
+                          xscale.components = xscale.components.subticks,
+                          yscale.components = yscale.components.subticks,
+                          as.table = TRUE)
+p = scatter.lattice.contr_pi
 print (p)
 
