@@ -29,7 +29,7 @@ if (length(files_dir_2) < 1) {
 }
 
 file_names <- vector()
-test_types <- vector()
+dir_path <- vector()
 
 for (test_timestamp in files_dir_2) {
     base_dir_3 <- paste(base_dir_2, test_timestamp, sep = '/')
@@ -41,15 +41,12 @@ for (test_timestamp in files_dir_2) {
           full_path = paste(base_dir_3, file_name, sep = '/')
           # Append the full path of the file to the list
           file_names  <- c(file_names, full_path)
-          # Use test_types to hold mapping between full file path and type of test:
-          test_types[full_path] <- test_type
           # Store the directory path:
           dir_path[full_path] <- base_dir_3
         }
       }
     }
   }
-}
 
 print ("Reading sleeptest result CSV files into a list")
 # Read the sleeptest csv files into a list:
