@@ -398,11 +398,13 @@ colnames(df_cxn_keepalive_filt)[names(df_cxn_keepalive_filt)=="Test_Type.x"] <- 
 colnames(df_cxn_keepalive_filt)[names(df_cxn_keepalive_filt)=="Dir_Path.x"] <- "Dir_Path"
 colnames(df_cxn_keepalive_filt)[names(df_cxn_keepalive_filt)=="Previous_Actual_Rate"] <- "Load_Rate"
 
-#============================== KVP TEST ===============================
+#============================== NMETA EVENT RATES ===============================
+# Note: KVP format, so needs some special handling
 
-files_kvp <- vector()
-test_types_kvp <- vector()
-dir_path_kvp <- vector()
+files_nmev <- vector()
+test_types_nmev <- vector()
+dir_path_nmev <- vector()
+df_nmev = data.frame()
 
 for (test_type in files_dir_2) {
   base_dir_3 <- paste(base_dir_2, test_type, sep = '/')
@@ -413,20 +415,110 @@ for (test_type in files_dir_2) {
     if (is.element("ct1.example.com-hort-nmeta-eventrates.csv", files_dir_4)) {
       full_path = paste(base_dir_4, "ct1.example.com-hort-nmeta-eventrates.csv", sep = '/')
       # Append the full path of the file to the list
-      files_kvp <- c(files_kvp, full_path)
+      files_nmev <- c(files_nmev, full_path)
       # Use test_types to hold mapping between full file path and type of test:
-      test_types_kvp[full_path] <- test_type
+      test_types_nmev[full_path] <- test_type
       # Store the directory path:
-      dir_path_kvp[full_path] <- base_dir_4
+      dir_path_nmev[full_path] <- base_dir_4
     }
   }
 }
 
-print ("Reading hort client cxn-close result CSV files into a list")
+print ("Reading nmeta event rate CSV files into a list")
 # Read the pc1 connection close csv files into a list:
-files_list_kvp <- lapply(files_kvp, read.csv)
+files_list_nmev <- lapply(files_nmev, read.csv)
+
+# nmeta event rate KVP processing (not very good R...):
+print ("Processing nmeta event rate KVP to data frame")
+for (h in 1:length(files_list_nmev)) {
+    file1 <- files_list_nmev[[h]]
+    test_type <- unname(test_types_nmev[[h]])
+    dir_path <- unname(dir_path_nmev[[h]])
+    for(i in 1:nrow(file1)) {
+        # To get a df row as a simple vector have to do some trickery
+        # Need to transform (x<->y) then grab column as vector...
+        # Extract a row as unnamed vector from the data frame
+        row <- unname(c(t(file1)[,i]))
+        # Turn time field into a nmev:
+        row[1] <- paste0("Time=", row[1])
+        # Conditionally remove last element (occurs if CSV with trailing comma)
+        if (is.na(tail(row, n=1))) {
+            row <- row[-length(row)]
+        }
+        #row <- c(row, full_path)
+        # Turn vector into a data frame:
+        df_row <- as.data.frame(sapply(strsplit(row, '='), rbind), stringsAsFactors=FALSE)
+        # Fix names:
+        names(df_row) <- df_row[1,]
+        df_row <- df_row[-1,]
+        # Add the test type and dir path values:
+        df_row$Test_Type <- test_type
+        df_row$Dir_Path <- dir_path
+        # Merge into result df:
+        if("Time" %in% colnames(df_nmev)) {
+            df_nmev <-merge(df_nmev, df_row, all=TRUE, sort=TRUE)
+        }
+        else {
+            df_nmev <- df_row
+        }
+    }
+}
+# Set Time column to POSIXct data type:
+df_nmev$Time <- as.POSIXct(df_nmev$Time)
+
+# =================== NMETA EVENT - FILT MERGE GOODNESS ==================
+# Use merge to create a combined nmeta events/filt data frame:
+df_nmev_filt <-merge(df_nmev, df_filt, all=T, by="Time")
+print("nmeta event rates: initial merge gives this...")
+head(df_nmev_filt)
+
+# Remove leading rows with NA for filt_Actual_Rate as they precede the
+#  start of the test:
+first_row <- which.min(is.na(df_nmev_filt$Previous_Actual_Rate))
+print(paste0("nmeta event rates: First row with filt test running is ", first_row))
+df_nmev_filt = df_nmev_filt[-(1:(first_row-1)),]
+
+print("nmeta event rates: Zoo time! Replace the NAs with next value in column")
+# Use zoo package na.locf
+df_nmev_filt$Previous_Actual_Rate <- na.locf(df_nmev_filt$Previous_Actual_Rate, fromLast = TRUE, na.rm = FALSE)
+
+print("nmeta event rates: remove NAs")
+# subset df with only rows that have complete data in columns 1 & 2:
+df_nmev_filt <- df_nmev_filt[complete.cases(df_nmev_filt[,"packet_in"]),]
+
+print("nmeta event rates: remove superfluous columns and tidy up names")
+drops <- c("Test_Type.y","Dir_Path.y")
+df_nmev_filt <- df_nmev_filt[,!(names(df_nmev_filt) %in% drops)]
+# Update column names by name:
+colnames(df_nmev_filt)[names(df_nmev_filt)=="Test_Type.x"] <- "Test_Type"
+colnames(df_nmev_filt)[names(df_nmev_filt)=="Dir_Path.x"] <- "Dir_Path"
+colnames(df_nmev_filt)[names(df_nmev_filt)=="Previous_Actual_Rate"] <- "Load_Rate"
 
 # ============================= CHARTING ===============================
+
+print("nmeta event rate packet_in: creating chart")
+# Scatter lattice with panel per test type and R squared stat analysis:
+scatter.lattice.nmevpi <- xyplot(packet_in ~ Load_Rate | Test_Type, 
+                          data = df_nmev_filt,
+                          main="nmeta packet in rate vs New Flows Load by Test Type",
+                          panel = function(x, y, ...) {
+                            panel.xyplot(x, y, ...)
+                            lm1 <- lm(y ~ x)
+                            lm1sum <- summary(lm1)
+                            r2 <- lm1sum$adj.r.squared
+                            panel.abline(a = lm1$coefficients[1], 
+                                         b = lm1$coefficients[2])
+                            panel.text(labels = 
+                                         bquote(italic(R)^2 == 
+                                                  .(format(r2, 
+                                                           digits = 3))),
+                                       x = 30, y = 1000)
+                            },
+                          xscale.components = xscale.components.subticks,
+                          yscale.components = yscale.components.subticks,
+                          as.table = TRUE)
+p = scatter.lattice.nmevpi
+print (p)
 
 print("Client cxn-close: creating chart")
 # Scatter lattice with panel per test type and R squared stat analysis:

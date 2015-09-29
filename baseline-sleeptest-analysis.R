@@ -51,3 +51,44 @@ for (test_timestamp in files_dir_2) {
 print ("Reading sleeptest result CSV files into a list")
 # Read the sleeptest csv files into a list:
 files_list <- lapply(file_names, read.csv)
+
+# Data frame for actual rates:
+# Pull out the values we need and merge into a single data frame
+#  with a column of actual rates, a column for test type,
+#  indexed against target rate:
+# Set a blank data frame to put our results into:
+df_sleeptimes = data.frame()
+for (i in 1:length(files_list)) {
+  d = files_list[[i]]
+  #*** fill vector z1 with the test type:
+  z1 <- rep("Sleep Test", length(files_list[[i]]$Target_Sleep))
+  d$test_type <- z1
+  # Set appropriate column names.
+  colnames(d) <- c("Target_Sleep", "Actual_Sleep", "Discrepancy", "Percentage_Error", "Test_Type")
+  # Accumulate the additional data rows:
+  df_sleeptimes = rbind(df_sleeptimes, d)
+}
+
+# ============================= CHARTING ===============================
+
+print("Creating chart 1...")
+# Scatter lattice with panel per test type and R squared stat analysis:
+scatter.lattice.discrepancy <- xyplot(Discrepancy ~ Target_Sleep | Test_Type, 
+                          data = df_sleeptimes,
+                          main="Absolute Sleep Error by Target Sleep Time",
+                          xlab="Target Sleep (seconds)",
+                          ylab="Actual Sleep difference from Target Sleep (seconds)",
+                          as.table = TRUE)
+p = scatter.lattice.discrepancy
+print (p)
+
+print("Creating chart 2...")
+# Scatter lattice with panel per test type and R squared stat analysis:
+scatter.lattice.percentage <- xyplot(Percentage_Error ~ Target_Sleep | Test_Type, 
+                          data = df_sleeptimes,
+                          main="Percentage Sleep Error by Target Sleep Time",
+                          xlab="Target Sleep (seconds)",
+                          ylab="Percentage Sleep difference from Target Sleep (seconds)",
+                          as.table = TRUE)
+p = scatter.lattice.percentage
+print (p)
