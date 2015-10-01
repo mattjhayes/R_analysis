@@ -28,6 +28,36 @@ if (length(files_dir_2) < 1) {
   stop("No subdirectories?")
 }
 
+# ===================== FUNCTIONS ==============================
+chart_scatter_1 <- function(data_x, data_y, data_type, data.frame, chart_title, x_axis_label, y_axis_label){
+    # Scatter lattice with panel per test type and R squared stat analysis:
+    y_vs_x <- paste(data_y, data_x, sep="~")
+    chart_formula <- formula(paste(y_vs_x, data_type, sep="|"))
+    scatter.lattice <- xyplot(chart_formula, 
+                          data = data.frame,
+                          main=chart_title,
+                          panel = function(x, y, ...) {
+                            panel.xyplot(x, y, ...)
+                            lm1 <- lm(y ~ x)
+                            lm1sum <- summary(lm1)
+                            r2 <- lm1sum$adj.r.squared
+                            panel.abline(a = lm1$coefficients[1], 
+                                         b = lm1$coefficients[2])
+                            panel.text(labels = 
+                                         bquote(italic(R)^2 == 
+                                                  .(format(r2, 
+                                                           digits = 3))),
+                                       x = 30, y = 1000)
+                            },
+                          xscale.components = xscale.components.subticks,
+                          yscale.components = yscale.components.subticks,
+                          xlab=x_axis_label,
+                          ylab=y_axis_label,
+                          as.table = TRUE)
+    p = scatter.lattice
+    print (p)
+}
+
 # ======================= filt load analysis:
 # Read in the lg1.example.com-filt-*.csv files from the various
 #  sub-directories:
@@ -496,194 +526,43 @@ colnames(df_nmev_filt)[names(df_nmev_filt)=="Previous_Actual_Rate"] <- "Load_Rat
 
 # ============================= CHARTING ===============================
 
-print("nmeta event rate packet_in: creating chart")
-# Scatter lattice with panel per test type and R squared stat analysis:
-scatter.lattice.nmevpi <- xyplot(packet_in ~ Load_Rate | Test_Type, 
-                          data = df_nmev_filt,
-                          main="nmeta packet in rate vs New Flows Load by Test Type",
-                          panel = function(x, y, ...) {
-                            panel.xyplot(x, y, ...)
-                            lm1 <- lm(y ~ x)
-                            lm1sum <- summary(lm1)
-                            r2 <- lm1sum$adj.r.squared
-                            panel.abline(a = lm1$coefficients[1], 
-                                         b = lm1$coefficients[2])
-                            panel.text(labels = 
-                                         bquote(italic(R)^2 == 
-                                                  .(format(r2, 
-                                                           digits = 3))),
-                                       x = 30, y = 1000)
-                            },
-                          xscale.components = xscale.components.subticks,
-                          yscale.components = yscale.components.subticks,
-                          as.table = TRUE)
-p = scatter.lattice.nmevpi
-print (p)
+# Call our function to create charts (see top of this program)
 
+# Packet-in chart:
+print("Packet-in: creating chart")
+chart_scatter_1("Load_Rate", "packet_in", "Test_Type", df_nmev_filt, "Controller OpenFlow packet-in rate vs New Flows Load", "Load Rate", "Add Flow Rate")
+
+# Add flow chart:
+print("Add-flow: creating chart")
+chart_scatter_1("Load_Rate", "add_flow", "Test_Type", df_nmev_filt, "Controller OpenFlow Add Flow Rate", "Load Rate", "Add Flow Rate")
+
+# Cxn-close chart:
 print("Client cxn-close: creating chart")
-# Scatter lattice with panel per test type and R squared stat analysis:
-scatter.lattice.cxn_close <- xyplot(Object_Retrieval_Time ~ Load_Rate | Test_Type, 
-                          data = df_cxn_close_filt,
-                          main="Connection Close Retrieval Time vs New Flows Load by Test Type",
-                          panel = function(x, y, ...) {
-                            panel.xyplot(x, y, ...)
-                            lm1 <- lm(y ~ x)
-                            lm1sum <- summary(lm1)
-                            r2 <- lm1sum$adj.r.squared
-                            panel.abline(a = lm1$coefficients[1], 
-                                         b = lm1$coefficients[2])
-                            panel.text(labels = 
-                                         bquote(italic(R)^2 == 
-                                                  .(format(r2, 
-                                                           digits = 3))),
-                                       x = 30, y = 1000)
-                            },
-                          xscale.components = xscale.components.subticks,
-                          yscale.components = yscale.components.subticks,
-                          as.table = TRUE)
-p = scatter.lattice.cxn_close
-print (p)
+chart_scatter_1("Load_Rate", "Object_Retrieval_Time", "Test_Type", df_cxn_close_filt, "Connection Close Retrieval Time vs New Flows Load by Test Type", "Load Rate", "Object Retrieval Time (seconds)")
 
+# Cxn-keepalive chart:
 print("Client cxn-keepalive: creating chart")
-# Scatter lattice with panel per test type and R squared stat analysis:
-scatter.lattice.cxn_keepalive <- xyplot(Object_Retrieval_Time ~ Load_Rate | Test_Type, 
-                          data = df_cxn_keepalive_filt,
-                          main="Connection Keepalive Retrieval Time vs New Flows Load by Test Type",
-                          panel = function(x, y, ...) {
-                            panel.xyplot(x, y, ...)
-                            lm1 <- lm(y ~ x)
-                            lm1sum <- summary(lm1)
-                            r2 <- lm1sum$adj.r.squared
-                            panel.abline(a = lm1$coefficients[1], 
-                                         b = lm1$coefficients[2])
-                            panel.text(labels = 
-                                         bquote(italic(R)^2 == 
-                                                  .(format(r2, 
-                                                           digits = 3))),
-                                       x = 30, y = 1000)
-                            },
-                          xscale.components = xscale.components.subticks,
-                          yscale.components = yscale.components.subticks,
-                          as.table = TRUE)
-p = scatter.lattice.cxn_keepalive
-print (p)
+chart_scatter_1("Load_Rate", "Object_Retrieval_Time", "Test_Type", df_cxn_keepalive_filt, "Connection Keepalive Retrieval Time vs New Flows Load by Test Type", "Load Rate", "Object Retrieval Time (seconds)")
 
+# Controller CPU:
 print("Controller mosp: creating CPU chart")
-# Scatter lattice with panel per test type and R squared stat analysis:
-scatter.lattice.contr_cpu <- xyplot(Controller_CPU ~ Load_Rate | Test_Type, 
-                          data = df_ct_mosp_filt,
-                          main="Controller CPU vs New Flows Load by Test Type",
-                          panel = function(x, y, ...) {
-                            panel.xyplot(x, y, ...)
-                            lm1 <- lm(y ~ x)
-                            lm1sum <- summary(lm1)
-                            r2 <- lm1sum$adj.r.squared
-                            panel.abline(a = lm1$coefficients[1], 
-                                         b = lm1$coefficients[2])
-                            panel.text(labels = 
-                                         bquote(italic(R)^2 == 
-                                                  .(format(r2, 
-                                                           digits = 3))),
-                                       x = 30, y = 1000)
-                            },
-                          xscale.components = xscale.components.subticks,
-                          yscale.components = yscale.components.subticks,
-                          as.table = TRUE)
-p = scatter.lattice.contr_cpu
-print (p)
+chart_scatter_1("Load_Rate", "Controller_CPU", "Test_Type", df_ct_mosp_filt, "Controller CPU vs New Flows Load by Test Type", "Load Rate", "CPU Load (%)")
 
+# Controller Swap Out:
 print("Controller mosp: creating Swap Out chart")
-# Scatter lattice with panel per test type and R squared stat analysis:
-scatter.lattice.contr_so <- xyplot(Controller_Swap_Out ~ Load_Rate | Test_Type, 
-                          data = df_ct_mosp_filt,
-                          main="Controller Swap Out vs New Flows Load by Test Type",
-                          panel = function(x, y, ...) {
-                            panel.xyplot(x, y, ...)
-                            lm1 <- lm(y ~ x)
-                            lm1sum <- summary(lm1)
-                            r2 <- lm1sum$adj.r.squared
-                            panel.abline(a = lm1$coefficients[1], 
-                                         b = lm1$coefficients[2])
-                            panel.text(labels = 
-                                         bquote(italic(R)^2 == 
-                                                  .(format(r2, 
-                                                           digits = 3))),
-                                       x = 30, y = 1000)
-                            },
-                          xscale.components = xscale.components.subticks,
-                          yscale.components = yscale.components.subticks,
-                          as.table = TRUE)
-p = scatter.lattice.contr_so
-print (p)
+chart_scatter_1("Load_Rate", "Controller_Swap_Out", "Test_Type", df_ct_mosp_filt, "Controller Swap Out vs New Flows Load by Test Type", "Load Rate", "Swap Out (Bytes) per interval")
 
-print("Controller mosp: creating Packet In chart")
-# Scatter lattice with panel per test type and R squared stat analysis:
-scatter.lattice.contr_pi <- xyplot(Controller_Pkt_In ~ Load_Rate | Test_Type, 
-                          data = df_ct_mosp_filt,
-                          main="Controller Packets In vs New Flows Load by Test Type",
-                          panel = function(x, y, ...) {
-                            panel.xyplot(x, y, ...)
-                            lm1 <- lm(y ~ x)
-                            lm1sum <- summary(lm1)
-                            r2 <- lm1sum$adj.r.squared
-                            panel.abline(a = lm1$coefficients[1], 
-                                         b = lm1$coefficients[2])
-                            panel.text(labels = 
-                                         bquote(italic(R)^2 == 
-                                                  .(format(r2, 
-                                                           digits = 3))),
-                                       x = 30, y = 1000)
-                            },
-                          xscale.components = xscale.components.subticks,
-                          yscale.components = yscale.components.subticks,
-                          as.table = TRUE)
-p = scatter.lattice.contr_pi
-print (p)
+# Controller Ethernet Packets In:
+print("Controller mosp: creating Packets In chart")
+chart_scatter_1("Load_Rate", "Controller_Pkt_In", "Test_Type", df_ct_mosp_filt, "Controller Ethernet Packets In vs New Flows Load by Test Type", "Load Rate", "Packets Received per Interval")
 
+# Switch CPU:
 print("Switch mosp: creating CPU chart")
-# Scatter lattice with panel per test type and R squared stat analysis:
-scatter.lattice.sw_cpu <- xyplot(Switch_CPU ~ Load_Rate | Test_Type, 
-                          data = df_sw_mosp_filt,
-                          main="Switch CPU vs New Flows Load by Test Type",
-                          panel = function(x, y, ...) {
-                            panel.xyplot(x, y, ...)
-                            lm1 <- lm(y ~ x)
-                            lm1sum <- summary(lm1)
-                            r2 <- lm1sum$adj.r.squared
-                            panel.abline(a = lm1$coefficients[1], 
-                                         b = lm1$coefficients[2])
-                            panel.text(labels = 
-                                         bquote(italic(R)^2 == 
-                                                  .(format(r2, 
-                                                           digits = 3))),
-                                       x = 30, y = 1000)
-                            },
-                          xscale.components = xscale.components.subticks,
-                          yscale.components = yscale.components.subticks,
-                          as.table = TRUE)
-p = scatter.lattice.sw_cpu
-print (p)
+chart_scatter_1("Load_Rate", "Switch_CPU", "Test_Type", df_sw_mosp_filt, "Switch CPU vs New Flows Load by Test Type", "Load Rate", "Switch CPU (%)")
 
+# Switch Swap Out:
 print("Switch mosp: creating Swap Out chart")
-# Scatter lattice with panel per test type and R squared stat analysis:
-scatter.lattice.sw_so <- xyplot(Switch_Swap_Out ~ Load_Rate | Test_Type, 
-                          data = df_sw_mosp_filt,
-                          main="Switch Swap Out vs New Flows Load by Test Type",
-                          panel = function(x, y, ...) {
-                            panel.xyplot(x, y, ...)
-                            lm1 <- lm(y ~ x)
-                            lm1sum <- summary(lm1)
-                            r2 <- lm1sum$adj.r.squared
-                            panel.abline(a = lm1$coefficients[1], 
-                                         b = lm1$coefficients[2])
-                            panel.text(labels = 
-                                         bquote(italic(R)^2 == 
-                                                  .(format(r2, 
-                                                           digits = 3))),
-                                       x = 30, y = 1000)
-                            },
-                          xscale.components = xscale.components.subticks,
-                          yscale.components = yscale.components.subticks,
-                          as.table = TRUE)
-p = scatter.lattice.sw_so
-print (p)
+chart_scatter_1("Load_Rate", "Switch_Swap_Out", "Test_Type", df_sw_mosp_filt, "Switch Swap Out vs New Flows Load by Test Type", "Load Rate", "Swap Out (Bytes) per interval")
+
+
+
