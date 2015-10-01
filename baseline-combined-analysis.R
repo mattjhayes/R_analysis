@@ -31,6 +31,7 @@ if (length(files_dir_2) < 1) {
 # ===================== FUNCTIONS ==============================
 chart_scatter_1 <- function(data_x, data_y, data_type, data.frame, chart_title, x_axis_label, y_axis_label){
     # Scatter lattice with panel per test type and R squared stat analysis:
+    # Build formula from variables we were passed:
     y_vs_x <- paste(data_y, data_x, sep="~")
     chart_formula <- formula(paste(y_vs_x, data_type, sep="|"))
     scatter.lattice <- xyplot(chart_formula, 
