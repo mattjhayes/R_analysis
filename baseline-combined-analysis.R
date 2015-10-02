@@ -1,4 +1,4 @@
-# Analyse results from a filt unit test
+# Analyse results from a new flow per second (NFPS) load test
 
 # Run in rstudio with:
 
@@ -28,8 +28,8 @@ if (length(files_dir_2) < 1) {
   stop("No subdirectories?")
 }
 
-# ===================== FUNCTIONS ==============================
-chart_scatter_1 <- function(data_x, data_y, data_type, data.frame, chart_title, x_axis_label, y_axis_label){
+# ===================== CHART FUNCTIONS ================================
+fx_chart_scatter_1 <- function(data_x, data_y, data_type, data.frame, chart_title, x_axis_label, y_axis_label) {
     # Scatter lattice with panel per test type and R squared stat analysis:
     # Build formula from variables we were passed:
     y_vs_x <- paste(data_y, data_x, sep="~")
@@ -59,6 +59,37 @@ chart_scatter_1 <- function(data_x, data_y, data_type, data.frame, chart_title, 
     print (p)
 }
 
+# ===================== DATA MANIPULATION FUNCTIONS ====================
+fx_index_by_load <- function(df_results, df_filt) {
+    # Create a data frame that is indexed against the filt NFPS load
+    # Use merge to create a combined result/filt data frame:
+    print("fx_index_by_load: Doing initial result df/filt df merge...")
+    df_combined <-merge(df_results, df_filt, all=T, by="Time")
+
+    # Remove leading rows with NA for filt_Actual_Rate as they precede the
+    #  start of the test:
+    first_row <- which.min(is.na(df_combined$Previous_Actual_Rate))
+    print(paste0("fx_index_by_load: First row with filt test running is ", first_row))
+    df_combined = df_combined[-(1:(first_row-1)),]
+
+    print("fx_index_by_load: Zoo time! Replace the NAs with next value in column")
+    # Use zoo package na.locf
+    df_combined$Previous_Actual_Rate <- na.locf(df_combined$Previous_Actual_Rate, fromLast = TRUE, na.rm = FALSE)
+
+    print("fx_index_by_load: remove NAs")
+    # subset df with only rows that have complete data in column 2:
+    df_combined <- df_combined[complete.cases(df_combined[, 2]),]
+
+    print("fx_index_by_load: remove superfluous columns and tidy up names")
+    drops <- c("Test_Type.y","Dir_Path.y")
+    df_combined <- df_combined[,!(names(df_combined) %in% drops)]
+    colnames(df_combined)[names(df_combined)=="Test_Type.x"] <- "Test_Type"
+    colnames(df_combined)[names(df_combined)=="Dir_Path.x"] <- "Dir_Path"
+    colnames(df_combined)[names(df_combined)=="Previous_Actual_Rate"] <- "Load_Rate"
+    return(df_combined)
+}
+
+# ===================== MAIN PROGRAM ===================================
 # ======================= filt load analysis:
 # Read in the lg1.example.com-filt-*.csv files from the various
 #  sub-directories:
@@ -169,31 +200,8 @@ for (i in 1:length(files_list_ct_mosp)) {
 # Set Time column to POSIXct data type:
 df_ct_mosp$Time <- as.POSIXct(df_ct_mosp$Time)
 
-# =================== CONTROLLER MOSP - FILT MERGE GOODNESS ==================
-# Use merge to create a combined controller mosp/filt data frame:
-print("Controller mosp: Doing initial controller mosp/filt merge...")
-df_ct_mosp_filt <-merge(df_ct_mosp, df_filt, all=T, by="Time")
-
-# Remove leading rows with NA for filt_Actual_Rate as they precede the
-#  start of the test:
-first_row <- which.min(is.na(df_ct_mosp_filt$Previous_Actual_Rate))
-print(paste0("Controller mosp: First row with filt test running is ", first_row))
-df_ct_mosp_filt = df_ct_mosp_filt[-(1:(first_row-1)),]
-
-print("Controller mosp: Zoo time! Replace the NAs with next value in column")
-# Use zoo package na.locf
-df_ct_mosp_filt$Previous_Actual_Rate <- na.locf(df_ct_mosp_filt$Previous_Actual_Rate, fromLast = TRUE, na.rm = FALSE)
-
-print("Controller mosp: remove NAs")
-# subset df with only rows that have complete data in column 2:
-df_ct_mosp_filt <- df_ct_mosp_filt[complete.cases(df_ct_mosp_filt[, 2]),]
-
-print("Controller mosp: remove superfluous columns and tidy up names")
-drops <- c("Test_Type.y","Dir_Path.y")
-df_ct_mosp_filt <- df_ct_mosp_filt[,!(names(df_ct_mosp_filt) %in% drops)]
-colnames(df_ct_mosp_filt)[names(df_ct_mosp_filt)=="Test_Type.x"] <- "Test_Type"
-colnames(df_ct_mosp_filt)[names(df_ct_mosp_filt)=="Dir_Path.x"] <- "Dir_Path"
-colnames(df_ct_mosp_filt)[names(df_ct_mosp_filt)=="Previous_Actual_Rate"] <- "Load_Rate"
+# Create a data frame that is indexed by filt NFPS load:
+df_ct_mosp_filt = fx_index_by_load(df_ct_mosp, df_filt)
 
 # ===================== Switch OS analysis:
 files_sw_mosp <- vector()
@@ -247,31 +255,8 @@ for (i in 1:length(files_list_sw_mosp)) {
 # Set Time column to POSIXct data type:
 df_sw_mosp$Time <- as.POSIXct(df_sw_mosp$Time)
 
-# =================== Switch MOSP - FILT MERGE GOODNESS ==================
-# Use merge to create a combined Switch mosp/filt data frame:
-print("Switch mosp: Doing initial Switch mosp/filt merge...")
-df_sw_mosp_filt <-merge(df_sw_mosp, df_filt, all=T, by="Time")
-
-# Remove leading rows with NA for filt_Actual_Rate as they precede the
-#  start of the test:
-first_row <- which.min(is.na(df_sw_mosp_filt$Previous_Actual_Rate))
-print(paste0("Switch mosp: First row with filt test running is ", first_row))
-df_sw_mosp_filt = df_sw_mosp_filt[-(1:(first_row-1)),]
-
-print("Switch mosp: Zoo time! Replace the NAs with next value in column")
-# Use zoo package na.locf
-df_sw_mosp_filt$Previous_Actual_Rate <- na.locf(df_sw_mosp_filt$Previous_Actual_Rate, fromLast = TRUE, na.rm = FALSE)
-
-print("Switch mosp: remove NAs")
-# subset df with only rows that have complete data in column 2:
-df_sw_mosp_filt <- df_sw_mosp_filt[complete.cases(df_sw_mosp_filt[, 2]),]
-
-print("Switch mosp: remove superfluous columns and tidy up names")
-drops <- c("Test_Type.y","Dir_Path.y")
-df_sw_mosp_filt <- df_sw_mosp_filt[,!(names(df_sw_mosp_filt) %in% drops)]
-colnames(df_sw_mosp_filt)[names(df_sw_mosp_filt)=="Test_Type.x"] <- "Test_Type"
-colnames(df_sw_mosp_filt)[names(df_sw_mosp_filt)=="Dir_Path.x"] <- "Dir_Path"
-colnames(df_sw_mosp_filt)[names(df_sw_mosp_filt)=="Previous_Actual_Rate"] <- "Load_Rate"
+# Create a data frame that is indexed by filt NFPS load:
+df_sw_mosp_filt = fx_index_by_load(df_sw_mosp, df_filt)
 
 # ===================== cxn-close analysis:
 files_cxn_close <- vector()
@@ -324,32 +309,8 @@ for (i in 1:length(files_list_cxn_close)) {
 # Set Time column to POSIXct data type:
 df_cxn_close$Time <- as.POSIXct(df_cxn_close$Time)
 
-# =================== CXN-CLOSE - FILT MERGE GOODNESS ==================
-# Use merge to create a combined cxn-close/filt data frame:
-df_cxn_close_filt <-merge(df_cxn_close, df_filt, all=T, by="Time")
-print("Client cxn-close: initial merge gives this...")
-head(df_cxn_close_filt)
-
-# Remove leading rows with NA for filt_Actual_Rate as they precede the
-#  start of the test:
-first_row <- which.min(is.na(df_cxn_close_filt$Previous_Actual_Rate))
-print(paste0("Client cxn-close: First row with filt test running is ", first_row))
-df_cxn_close_filt = df_cxn_close_filt[-(1:(first_row-1)),]
-
-print("Client cxn-close: Zoo time! Replace the NAs with next value in column")
-# Use zoo package na.locf
-df_cxn_close_filt$Previous_Actual_Rate <- na.locf(df_cxn_close_filt$Previous_Actual_Rate, fromLast = TRUE, na.rm = FALSE)
-
-print("Client cxn-close: remove NAs")
-# subset df with only rows that have complete data in columns 1 & 2:
-df_cxn_close_filt <- df_cxn_close_filt[complete.cases(df_cxn_close_filt[,"Object_Retrieval_Time"]),]
-
-print("Client cxn-close: remove superfluous columns and tidy up names")
-drops <- c("Test_Type.y","Dir_Path.y")
-df_cxn_close_filt <- df_cxn_close_filt[,!(names(df_cxn_close_filt) %in% drops)]
-colnames(df_cxn_close_filt)[names(df_cxn_close_filt)=="Test_Type.x"] <- "Test_Type"
-colnames(df_cxn_close_filt)[names(df_cxn_close_filt)=="Dir_Path.x"] <- "Dir_Path"
-colnames(df_cxn_close_filt)[names(df_cxn_close_filt)=="Previous_Actual_Rate"] <- "Load_Rate"
+# Create a data frame that is indexed by filt NFPS load:
+df_cxn_close_filt = fx_index_by_load(df_cxn_close, df_filt)
 
 # ===================== cxn-keepalive analysis:
 files_cxn_keepalive <- vector()
@@ -402,32 +363,8 @@ for (i in 1:length(files_list_cxn_keepalive)) {
 # Set Time column to POSIXct data type:
 df_cxn_keepalive$Time <- as.POSIXct(df_cxn_keepalive$Time)
 
-# =================== CXN-KEEPALIVE - FILT MERGE GOODNESS ==================
-# Use merge to create a combined cxn-keepalive/filt data frame:
-df_cxn_keepalive_filt <-merge(df_cxn_keepalive, df_filt, all=T, by="Time")
-print("Client cxn-keepalive: initial merge gives this...")
-head(df_cxn_keepalive_filt)
-
-# Remove leading rows with NA for filt_Actual_Rate as they precede the
-#  start of the test:
-first_row <- which.min(is.na(df_cxn_keepalive_filt$Previous_Actual_Rate))
-print(paste0("Client cxn-keepalive: First row with filt test running is ", first_row))
-df_cxn_keepalive_filt = df_cxn_keepalive_filt[-(1:(first_row-1)),]
-
-print("Client cxn-keepalive: Zoo time! Replace the NAs with next value in column")
-# Use zoo package na.locf
-df_cxn_keepalive_filt$Previous_Actual_Rate <- na.locf(df_cxn_keepalive_filt$Previous_Actual_Rate, fromLast = TRUE, na.rm = FALSE)
-
-print("Client cxn-keepalive: remove NAs")
-# subset df with only rows that have complete data in columns 1 & 2:
-df_cxn_keepalive_filt <- df_cxn_keepalive_filt[complete.cases(df_cxn_keepalive_filt[,"Object_Retrieval_Time"]),]
-
-print("Client cxn-keepalive: remove superfluous columns and tidy up names")
-drops <- c("Test_Type.y","Dir_Path.y")
-df_cxn_keepalive_filt <- df_cxn_keepalive_filt[,!(names(df_cxn_keepalive_filt) %in% drops)]
-colnames(df_cxn_keepalive_filt)[names(df_cxn_keepalive_filt)=="Test_Type.x"] <- "Test_Type"
-colnames(df_cxn_keepalive_filt)[names(df_cxn_keepalive_filt)=="Dir_Path.x"] <- "Dir_Path"
-colnames(df_cxn_keepalive_filt)[names(df_cxn_keepalive_filt)=="Previous_Actual_Rate"] <- "Load_Rate"
+# Create a data frame that is indexed by filt NFPS load:
+df_cxn_keepalive_filt = fx_index_by_load(df_cxn_keepalive, df_filt)
 
 #============================== NMETA EVENT RATES ===============================
 # Note: KVP format, so needs some special handling
@@ -497,33 +434,8 @@ for (h in 1:length(files_list_nmev)) {
 # Set Time column to POSIXct data type:
 df_nmev$Time <- as.POSIXct(df_nmev$Time)
 
-# =================== NMETA EVENT - FILT MERGE GOODNESS ==================
-# Use merge to create a combined nmeta events/filt data frame:
-df_nmev_filt <-merge(df_nmev, df_filt, all=T, by="Time")
-print("nmeta event rates: initial merge gives this...")
-head(df_nmev_filt)
-
-# Remove leading rows with NA for filt_Actual_Rate as they precede the
-#  start of the test:
-first_row <- which.min(is.na(df_nmev_filt$Previous_Actual_Rate))
-print(paste0("nmeta event rates: First row with filt test running is ", first_row))
-df_nmev_filt = df_nmev_filt[-(1:(first_row-1)),]
-
-print("nmeta event rates: Zoo time! Replace the NAs with next value in column")
-# Use zoo package na.locf
-df_nmev_filt$Previous_Actual_Rate <- na.locf(df_nmev_filt$Previous_Actual_Rate, fromLast = TRUE, na.rm = FALSE)
-
-print("nmeta event rates: remove NAs")
-# subset df with only rows that have complete data in columns 1 & 2:
-df_nmev_filt <- df_nmev_filt[complete.cases(df_nmev_filt[,"packet_in"]),]
-
-print("nmeta event rates: remove superfluous columns and tidy up names")
-drops <- c("Test_Type.y","Dir_Path.y")
-df_nmev_filt <- df_nmev_filt[,!(names(df_nmev_filt) %in% drops)]
-# Update column names by name:
-colnames(df_nmev_filt)[names(df_nmev_filt)=="Test_Type.x"] <- "Test_Type"
-colnames(df_nmev_filt)[names(df_nmev_filt)=="Dir_Path.x"] <- "Dir_Path"
-colnames(df_nmev_filt)[names(df_nmev_filt)=="Previous_Actual_Rate"] <- "Load_Rate"
+# Create a data frame that is indexed by filt NFPS load:
+df_nmev_filt = fx_index_by_load(df_nmev, df_filt)
 
 # ============================= CHARTING ===============================
 
@@ -531,39 +443,39 @@ colnames(df_nmev_filt)[names(df_nmev_filt)=="Previous_Actual_Rate"] <- "Load_Rat
 
 # Packet-in chart:
 print("Packet-in: creating chart")
-chart_scatter_1("Load_Rate", "packet_in", "Test_Type", df_nmev_filt, "Controller OpenFlow packet-in rate vs New Flows Load", "Load Rate", "Add Flow Rate")
+fx_chart_scatter_1("Load_Rate", "packet_in", "Test_Type", df_nmev_filt, "Controller OpenFlow packet-in rate vs New Flows Load", "Load Rate", "Add Flow Rate")
 
 # Add flow chart:
 print("Add-flow: creating chart")
-chart_scatter_1("Load_Rate", "add_flow", "Test_Type", df_nmev_filt, "Controller OpenFlow Add Flow Rate", "Load Rate", "Add Flow Rate")
+fx_chart_scatter_1("Load_Rate", "add_flow", "Test_Type", df_nmev_filt, "Controller OpenFlow Add Flow Rate", "Load Rate", "Add Flow Rate")
 
 # Cxn-close chart:
 print("Client cxn-close: creating chart")
-chart_scatter_1("Load_Rate", "Object_Retrieval_Time", "Test_Type", df_cxn_close_filt, "Connection Close Retrieval Time vs New Flows Load by Test Type", "Load Rate", "Object Retrieval Time (seconds)")
+fx_chart_scatter_1("Load_Rate", "Object_Retrieval_Time", "Test_Type", df_cxn_close_filt, "Connection Close Retrieval Time vs New Flows Load by Test Type", "Load Rate", "Object Retrieval Time (seconds)")
 
 # Cxn-keepalive chart:
 print("Client cxn-keepalive: creating chart")
-chart_scatter_1("Load_Rate", "Object_Retrieval_Time", "Test_Type", df_cxn_keepalive_filt, "Connection Keepalive Retrieval Time vs New Flows Load by Test Type", "Load Rate", "Object Retrieval Time (seconds)")
+fx_chart_scatter_1("Load_Rate", "Object_Retrieval_Time", "Test_Type", df_cxn_keepalive_filt, "Connection Keepalive Retrieval Time vs New Flows Load by Test Type", "Load Rate", "Object Retrieval Time (seconds)")
 
 # Controller CPU:
 print("Controller mosp: creating CPU chart")
-chart_scatter_1("Load_Rate", "Controller_CPU", "Test_Type", df_ct_mosp_filt, "Controller CPU vs New Flows Load by Test Type", "Load Rate", "CPU Load (%)")
+fx_chart_scatter_1("Load_Rate", "Controller_CPU", "Test_Type", df_ct_mosp_filt, "Controller CPU vs New Flows Load by Test Type", "Load Rate", "CPU Load (%)")
 
 # Controller Swap Out:
 print("Controller mosp: creating Swap Out chart")
-chart_scatter_1("Load_Rate", "Controller_Swap_Out", "Test_Type", df_ct_mosp_filt, "Controller Swap Out vs New Flows Load by Test Type", "Load Rate", "Swap Out (Bytes) per interval")
+fx_chart_scatter_1("Load_Rate", "Controller_Swap_Out", "Test_Type", df_ct_mosp_filt, "Controller Swap Out vs New Flows Load by Test Type", "Load Rate", "Swap Out (Bytes) per interval")
 
 # Controller Ethernet Packets In:
 print("Controller mosp: creating Packets In chart")
-chart_scatter_1("Load_Rate", "Controller_Pkt_In", "Test_Type", df_ct_mosp_filt, "Controller Ethernet Packets In vs New Flows Load by Test Type", "Load Rate", "Packets Received per Interval")
+fx_chart_scatter_1("Load_Rate", "Controller_Pkt_In", "Test_Type", df_ct_mosp_filt, "Controller Ethernet Packets In vs New Flows Load by Test Type", "Load Rate", "Packets Received per Interval")
 
 # Switch CPU:
 print("Switch mosp: creating CPU chart")
-chart_scatter_1("Load_Rate", "Switch_CPU", "Test_Type", df_sw_mosp_filt, "Switch CPU vs New Flows Load by Test Type", "Load Rate", "Switch CPU (%)")
+fx_chart_scatter_1("Load_Rate", "Switch_CPU", "Test_Type", df_sw_mosp_filt, "Switch CPU vs New Flows Load by Test Type", "Load Rate", "Switch CPU (%)")
 
 # Switch Swap Out:
 print("Switch mosp: creating Swap Out chart")
-chart_scatter_1("Load_Rate", "Switch_Swap_Out", "Test_Type", df_sw_mosp_filt, "Switch Swap Out vs New Flows Load by Test Type", "Load Rate", "Swap Out (Bytes) per interval")
+fx_chart_scatter_1("Load_Rate", "Switch_Swap_Out", "Test_Type", df_sw_mosp_filt, "Switch Swap Out vs New Flows Load by Test Type", "Load Rate", "Swap Out (Bytes) per interval")
 
 
 
