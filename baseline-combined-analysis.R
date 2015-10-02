@@ -73,7 +73,7 @@ for (test_type in files_dir_2) {
     base_dir_4 <- paste(base_dir_3, test_timestamp, sep = '/')
     files_dir_4 <- list.files(path=base_dir_4)
     for (file_name in files_dir_4) {
-      file_match <- grep("lg1\\.example\\.com\\-filt\\-.*\\-1.csv", file_name)
+      file_match <- grep("lg1\\.example\\.com\\-filt\\-.*.csv", file_name)
       if (length(file_match) > 0) {
         if (file_match == 1) {
           full_path_filt = paste(base_dir_4, file_name, sep = '/')
