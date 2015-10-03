@@ -58,27 +58,38 @@ fx_chart_scatter_1 <- function(data_x, data_y, data_type, data.frame, chart_titl
     p = scatter.lattice
     print (p)
 }
-
 # ===================== DATA MANIPULATION FUNCTIONS ====================
 fx_index_by_load <- function(df_results, df_filt) {
     # Create a data frame that is indexed against the filt NFPS load
     # Use merge to create a combined result/filt data frame:
     print("fx_index_by_load: Doing initial result df/filt df merge...")
-    df_combined <-merge(df_results, df_filt, all=T, by="Time")
+    df_1 <-merge(df_results, df_filt, all=T, by="Time")
+    df_combined = data.frame()
 
     # Remove leading rows with NA for filt_Actual_Rate as they precede the
-    #  start of the test:
-    first_row <- which.min(is.na(df_combined$Previous_Actual_Rate))
-    print(paste0("fx_index_by_load: First row with filt test running is ", first_row))
-    df_combined = df_combined[-(1:(first_row-1)),]
+    #  start of the test, for each test (use Dir_Path to cut per test run):
+    for (Dir_Path in unique(df_1$Dir_Path.x)) {
+        if(!is.na(Dir_Path)) {
+            # Subset for particular test run results and filt:
+            df_2 <- df_1[ which((df_1$Dir_Path.x == Dir_Path) | (df_1$Dir_Path.y == Dir_Path)), ]
+            # First row that filt results start in:
+            first_row <- which.min(is.na(df_2$Previous_Actual_Rate))
+            # Trim rows before it off the df:
+            df_2 <- df_2[-(1:(first_row-1)),]
 
-    print("fx_index_by_load: Zoo time! Replace the NAs with next value in column")
-    # Use zoo package na.locf
-    df_combined$Previous_Actual_Rate <- na.locf(df_combined$Previous_Actual_Rate, fromLast = TRUE, na.rm = FALSE)
+            # Use zoo package na.locf to fill Previous_Actual_Rate from next value present:
+            df_2$Previous_Actual_Rate <- na.locf(df_2$Previous_Actual_Rate, fromLast = TRUE, na.rm = FALSE)
+
+            # Accumulate the additional data rows:
+            df_combined = rbind(df_combined, df_2)
+        }
+    }
 
     print("fx_index_by_load: remove NAs")
     # subset df with only rows that have complete data in column 2:
     df_combined <- df_combined[complete.cases(df_combined[, 2]),]
+    # subset df with only rows that have complete data for filt Previous_Actual_Rate:
+    df_combined <- df_combined[complete.cases(df_combined[, "Previous_Actual_Rate"]),]
 
     print("fx_index_by_load: remove superfluous columns and tidy up names")
     drops <- c("Test_Type.y","Dir_Path.y")
@@ -393,8 +404,15 @@ for (test_type in files_dir_2) {
 }
 
 print ("Reading nmeta event rate CSV files into a list")
-# Read the pc1 connection close csv files into a list:
+# Read the nmeta event rate csv files into a list:
 files_list_nmev <- lapply(files_nmev, read.csv)
+
+#for (file_name in files_nmev) {
+    #print(paste0("CSV file is ", file_name))
+    #df_temp <- read.table(file_name, header = FALSE, sep = ",", col.names = paste0("V",seq_len(8)), fill = TRUE)
+    #df_temp <- read.table(file_name, header = FALSE, sep = ",")
+    #files_list_nmev <- c(files_list_nmev, df_temp)
+#}
 
 # nmeta event rate KVP processing (not very good R...):
 print ("Processing nmeta event rate KVP to data frame")
@@ -434,6 +452,12 @@ for (h in 1:length(files_list_nmev)) {
 # Set Time column to POSIXct data type:
 df_nmev$Time <- as.POSIXct(df_nmev$Time)
 
+# Convert columns of numbers to numerics:
+df_nmev$size <- as.numeric(df_nmev$size)
+df_nmev$packet_in <- as.numeric(df_nmev$packet_in)
+df_nmev$add_flow <- as.numeric(df_nmev$add_flow)
+df_nmev$packet_out <- as.numeric(df_nmev$packet_out)
+
 # Create a data frame that is indexed by filt NFPS load:
 df_nmev_filt = fx_index_by_load(df_nmev, df_filt)
 
@@ -443,7 +467,7 @@ df_nmev_filt = fx_index_by_load(df_nmev, df_filt)
 
 # Packet-in chart:
 print("Packet-in: creating chart")
-fx_chart_scatter_1("Load_Rate", "packet_in", "Test_Type", df_nmev_filt, "Controller OpenFlow packet-in rate vs New Flows Load", "Load Rate", "Add Flow Rate")
+fx_chart_scatter_1("Load_Rate", "packet_in", "Test_Type", df_nmev_filt, "Controller OpenFlow packet-in rate vs New Flows Load", "Load Rate", "Packet-In Rate")
 
 # Add flow chart:
 print("Add-flow: creating chart")
