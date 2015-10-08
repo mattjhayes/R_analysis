@@ -100,10 +100,10 @@ fx_index_by_load <- function(df_results, df_filt) {
     return(df_combined)
 }
 # =============================== BUILD FILE DATA FUNCTION =============
-# Use this to build file data prior to importing CSVs
-# Pass it the name of the CSV file and base directory and it will trawl
-# the directory structure and return list of 3 vectors that are needed
 fx_build_file_data <- function(file_name, files_dir_2) {
+    # Use this to build file data prior to importing CSVs
+    # Pass it the name of the CSV file and base directory and it will trawl
+    # the directory structure and return list of 3 vectors that are needed
     files_vector <- vector()
     test_types_vector <- vector()
     dir_path_vector <- vector()
@@ -133,7 +133,9 @@ fx_build_file_data <- function(file_name, files_dir_2) {
 
 # ============================= CSVs to DATA FRAME =====================
 fx_csv2df <- function(files_list, files, col_select, col_names) {
-    # Passed a list of CSV file data frames and
+    # Passed a list of CSV file data frames, files information, specific
+    # columns of interest and their final names and return a single 
+    # data frame that incorporates all this information
     df_result <- data.frame()
     # iterate through files and add to result data frame
     for (i in 1:length(files_list)) {
@@ -285,60 +287,32 @@ df_cxn_keepalive <- fx_csv2df(files_list, files, col_select, col_names)
 df_cxn_keepalive_filt = fx_index_by_load(df_cxn_keepalive, df_filt)
 
 #============================== NMETA EVENT RATES ===============================
-# Note: KVP format, so needs some special handling
-
-files_nmev <- vector()
-test_types_nmev <- vector()
-dir_path_nmev <- vector()
-df_nmev = data.frame()
-
-for (test_type in files_dir_2) {
-  base_dir_3 <- paste(base_dir_2, test_type, sep = '/')
-  files_dir_3 <- list.files(path=base_dir_3)
-  for (test_timestamp in files_dir_3) {
-    base_dir_4 <- paste(base_dir_3, test_timestamp, sep = '/')
-    files_dir_4 <- list.files(path=base_dir_4)
-    if (is.element("ct1.example.com-hort-nmeta-eventrates.csv", files_dir_4)) {
-      full_path = paste(base_dir_4, "ct1.example.com-hort-nmeta-eventrates.csv", sep = '/')
-      # Append the full path of the file to the list
-      files_nmev <- c(files_nmev, full_path)
-      # Use test_types to hold mapping between full file path and type of test:
-      test_types_nmev[full_path] <- test_type
-      # Store the directory path:
-      dir_path_nmev[full_path] <- base_dir_4
-    }
-  }
-}
+# Note: **KVP** format, so needs some special handling
+# Call function (see further up) to build file data:
+files <- fx_build_file_data("ct1.example.com-hort-nmeta-eventrates.csv", files_dir_2)
 
 print ("Reading nmeta event rate CSV files into a list")
 # Read the nmeta event rate csv files into a list:
-files_list_nmev <- lapply(files_nmev, read.csv)
-
-#for (file_name in files_nmev) {
-    #print(paste0("CSV file is ", file_name))
-    #df_temp <- read.table(file_name, header = FALSE, sep = ",", col.names = paste0("V",seq_len(8)), fill = TRUE)
-    #df_temp <- read.table(file_name, header = FALSE, sep = ",")
-    #files_list_nmev <- c(files_list_nmev, df_temp)
-#}
+files_list <- lapply(files$files, read.csv)
 
 # nmeta event rate KVP processing (not very good R...):
 print ("Processing nmeta event rate KVP to data frame")
-for (h in 1:length(files_list_nmev)) {
-    file1 <- files_list_nmev[[h]]
-    test_type <- unname(test_types_nmev[[h]])
-    dir_path <- unname(dir_path_nmev[[h]])
+df_nmev = data.frame()
+for (h in 1:length(files_list)) {
+    file1 <- files_list[[h]]
+    test_type <- unname(files$test_types[[h]])
+    dir_path <- unname(files$dir_path[[h]])
     for(i in 1:nrow(file1)) {
         # To get a df row as a simple vector have to do some trickery
         # Need to transform (x<->y) then grab column as vector...
         # Extract a row as unnamed vector from the data frame
         row <- unname(c(t(file1)[,i]))
-        # Turn time field into a nmev:
+        # Turn time field into a KVP:
         row[1] <- paste0("Time=", row[1])
         # Conditionally remove last element (occurs if CSV with trailing comma)
         if (is.na(tail(row, n=1))) {
             row <- row[-length(row)]
         }
-        #row <- c(row, full_path)
         # Turn vector into a data frame:
         df_row <- as.data.frame(sapply(strsplit(row, '='), rbind), stringsAsFactors=FALSE)
         # Fix names:
@@ -368,6 +342,61 @@ df_nmev$packet_out <- as.numeric(df_nmev$packet_out)
 # Create a data frame that is indexed by filt NFPS load:
 df_nmev_filt = fx_index_by_load(df_nmev, df_filt)
 
+#============================== NMETA PACKET TIME ===============================
+# Note: **KVP** format, so needs some special handling
+# Call function (see further up) to build file data:
+files <- fx_build_file_data("ct1.example.com-hort-nmeta-packet_time.csv", files_dir_2)
+
+print ("Reading nmeta packet time CSV files into a list")
+# Read the csv files into a list:
+files_list <- lapply(files$files, read.csv)
+
+# nmeta packet time KVP processing (not very good R...):
+print ("Processing nmeta packet time KVP to data frame")
+df_pkttime = data.frame()
+for (h in 1:length(files_list)) {
+    file1 <- files_list[[h]]
+    test_type <- unname(files$test_types[[h]])
+    dir_path <- unname(files$dir_path[[h]])
+    for(i in 1:nrow(file1)) {
+        # To get a df row as a simple vector have to do some trickery
+        # Need to transform (x<->y) then grab column as vector...
+        # Extract a row as unnamed vector from the data frame
+        row <- unname(c(t(file1)[,i]))
+        # Turn time field into a KVP:
+        row[1] <- paste0("Time=", row[1])
+        # Conditionally remove last element (occurs if CSV with trailing comma)
+        if (is.na(tail(row, n=1))) {
+            row <- row[-length(row)]
+        }
+        # Turn vector into a data frame:
+        df_row <- as.data.frame(sapply(strsplit(row, '='), rbind), stringsAsFactors=FALSE)
+        # Fix names:
+        names(df_row) <- df_row[1,]
+        df_row <- df_row[-1,]
+        # Add the test type and dir path values:
+        df_row$Test_Type <- test_type
+        df_row$Dir_Path <- dir_path
+        # Merge into result df:
+        if("Time" %in% colnames(df_nmev)) {
+            df_pkttime <-merge(df_pkttime, df_row, all=TRUE, sort=TRUE)
+        }
+        else {
+            df_pkttime <- df_row
+        }
+    }
+}
+# Set Time column to POSIXct data type:
+df_pkttime$Time <- as.POSIXct(df_pkttime$Time)
+
+# Convert columns of numbers to numerics:
+df_pkttime$min_min <- as.numeric(df_pkttime$min_min)
+df_pkttime$avg <- as.numeric(df_pkttime$avg)
+df_pkttime$max_max <- as.numeric(df_pkttime$max_max)
+
+# Create a data frame that is indexed by filt NFPS load:
+df_pkttime_filt = fx_index_by_load(df_pkttime, df_filt)
+
 # ============================= CHARTING ===============================
 
 # Call our function to create charts (see top of this program)
@@ -379,6 +408,10 @@ fx_chart_scatter_1("Load_Rate", "packet_in", "Test_Type", df_nmev_filt, "Control
 # Add flow chart:
 print("Add-flow: creating chart")
 fx_chart_scatter_1("Load_Rate", "add_flow", "Test_Type", df_nmev_filt, "Controller OpenFlow Add Flow Rate", "Load Rate", "Add Flow Rate")
+
+# Add avg packet time chart:
+print("Packet Time avg: creating chart")
+fx_chart_scatter_1("Load_Rate", "avg", "Test_Type", df_pkttime_filt, "Controller Packet Processing Time", "Load Rate", "avg")
 
 # Cxn-close chart:
 print("Client cxn-close: creating chart")
