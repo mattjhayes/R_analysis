@@ -99,6 +99,67 @@ fx_index_by_load <- function(df_results, df_filt) {
     colnames(df_combined)[names(df_combined)=="Previous_Actual_Rate"] <- "Load_Rate"
     return(df_combined)
 }
+# =============================== BUILD FILE DATA FUNCTION =============
+# Use this to build file data prior to importing CSVs
+# Pass it the name of the CSV file and base directory and it will trawl
+# the directory structure and return list of 3 vectors that are needed
+fx_build_file_data <- function(file_name, files_dir_2) {
+    files_vector <- vector()
+    test_types_vector <- vector()
+    dir_path_vector <- vector()
+
+    for (test_type in files_dir_2) {
+        base_dir_3 <- paste(base_dir_2, test_type, sep = '/')
+        files_dir_3 <- list.files(path=base_dir_3)
+        for (test_timestamp in files_dir_3) {
+            base_dir_4 <- paste(base_dir_3, test_timestamp, sep = '/')
+            files_dir_4 <- list.files(path=base_dir_4)
+            if (is.element(file_name, files_dir_4)) {
+                full_path = paste(base_dir_4, file_name, sep = '/')
+                # Append the full path of the file to the list
+                files_vector <- c(files_vector, full_path)
+                # Use test_types to hold mapping between full file path and type of test:
+                test_types_vector[full_path] <- test_type
+                # Store the directory path:
+                dir_path_vector[full_path] <- base_dir_4
+            }
+        }
+    }
+    returnList <- list("files" = files_vector,
+                       "test_types" = test_types_vector,
+                       "dir_path" = dir_path_vector)
+    return(returnList)
+}
+
+# ============================= CSVs to DATA FRAME =====================
+fx_csv2df <- function(files_list, files, col_select, col_names) {
+    # Passed a list of CSV file data frames and
+    df_result <- data.frame()
+    # iterate through files and add to result data frame
+    for (i in 1:length(files_list)) {
+        test_type <- unname(files$test_types[i])
+        dir_path <- unname(files$dir_path[i])
+        x <- files_list[[i]]$time
+        df_tmp <- data.frame(x)
+        colnames(df_tmp)[1] = "Time"
+        # Add in the 'y' column(s):
+        j <- 2
+        for (col_y in col_select) {
+            df_tmp$col_y <- files_list[[i]][,col_y]
+            colnames(df_tmp)[j] <- col_names[j - 1]
+            j <- j + 1
+        }
+        #*** Add filled Test_Type column:
+        df_tmp$Test_Type <- as.factor(rep(test_type, length(x)))
+        #*** Add filled Dir_Path column:
+        df_tmp$Dir_Path <- as.factor(rep(dir_path, length(x)))
+        # Accumulate the additional data rows:
+        df_result = rbind(df_result, df_tmp)
+    }
+    # Set Time column to POSIXct data type:
+    df_result$Time <- as.POSIXct(df_result$Time)
+    return(df_result)
+}
 
 # ===================== MAIN PROGRAM ===================================
 # ======================= filt load analysis:
@@ -160,219 +221,65 @@ for (i in 1:length(files_list_filt)) {
 df_filt$Time <- as.POSIXct(df_filt$Time)
 
 # ===================== Controller OS analysis:
-files_ct_mosp <- vector()
-test_types_ct_mosp <- vector()
-dir_path_ct_mosp <- vector()
+# Call function (see further up) to build file data:
+files <- fx_build_file_data("ct1.example.com-mosp.csv", files_dir_2)
 
-for (test_type in files_dir_2) {
-  base_dir_3 <- paste(base_dir_2, test_type, sep = '/')
-  files_dir_3 <- list.files(path=base_dir_3)
-  for (test_timestamp in files_dir_3) {
-    base_dir_4 <- paste(base_dir_3, test_timestamp, sep = '/')
-    files_dir_4 <- list.files(path=base_dir_4)
-    if (is.element("ct1.example.com-mosp.csv", files_dir_4)) {
-      full_path = paste(base_dir_4, "ct1.example.com-mosp.csv", sep = '/')
-      # Append the full path of the file to the list
-      files_ct_mosp <- c(files_ct_mosp, full_path)
-      # Use test_types to hold mapping between full file path and type of test:
-      test_types_ct_mosp[full_path] <- test_type
-      # Store the directory path:
-      dir_path_ct_mosp[full_path] <- base_dir_4
-    }
-  }
-}
+print ("Reading Controller mosp result CSV files into a list")
+# Read the result CSV files into a list:
+files_list <- lapply(files$files, read.csv)
 
-print ("Reading controller mosp result CSV files into a list")
-# Read the controller mosp result CSV files into a list:
-files_list_ct_mosp <- lapply(files_ct_mosp, read.csv)
-
-# Data frame for controller mosp results:
-# Set a blank data frame to put our results into:
-df_ct_mosp = data.frame()
-for (i in 1:length(files_list_ct_mosp)) {
-  test_type <- unname(test_types_ct_mosp[i])
-  dir_path <- unname(dir_path_ct_mosp[i])
-  x <- files_list_ct_mosp[[i]]$time
-  y1 <- files_list_ct_mosp[[i]]$ct1.cpu
-  y2 <- files_list_ct_mosp[[i]]$ct1.swap.in
-  y3 <- files_list_ct_mosp[[i]]$ct1.swap.out
-  y4 <- files_list_ct_mosp[[i]]$ct1.pkt.in
-  y5 <- files_list_ct_mosp[[i]]$ct1.pkt.out
-  #*** fill vector z1 with the test type:
-  z1 <- rep(test_type, length(x))
-  #*** fill vector z2 with the directory path:
-  z2 <- rep(dir_path, length(x))
-  d = data.frame(x, y1, y2, y3, y4, y5, z1, z2)
-  # Set appropriate column names.
-  colnames(d) <- c("Time", "Controller_CPU", "Controller_Swap_In", "Controller_Swap_Out", "Controller_Pkt_In", "Controller_Pkt_Out", "Test_Type", "Dir_Path")
-  # Accumulate the additional data rows:
-  df_ct_mosp = rbind(df_ct_mosp, d)
-}
-# Set Time column to POSIXct data type:
-df_ct_mosp$Time <- as.POSIXct(df_ct_mosp$Time)
+print ("Generating Controller mosp data frame")
+col_select <- c("ct1.cpu", "ct1.swap.in", "ct1.swap.out", "ct1.pkt.in", "ct1.pkt.out")
+col_names <- c("Controller_CPU", "Controller_Swap_In", "Controller_Swap_Out", "Controller_Pkt_In", "Controller_Pkt_Out")
+df_ct_mosp <- fx_csv2df(files_list, files, col_select, col_names)
 
 # Create a data frame that is indexed by filt NFPS load:
 df_ct_mosp_filt = fx_index_by_load(df_ct_mosp, df_filt)
 
 # ===================== Switch OS analysis:
-files_sw_mosp <- vector()
-test_types_sw_mosp <- vector()
-dir_path_sw_mosp <- vector()
-
-for (test_type in files_dir_2) {
-  base_dir_3 <- paste(base_dir_2, test_type, sep = '/')
-  files_dir_3 <- list.files(path=base_dir_3)
-  for (test_timestamp in files_dir_3) {
-    base_dir_4 <- paste(base_dir_3, test_timestamp, sep = '/')
-    files_dir_4 <- list.files(path=base_dir_4)
-    if (is.element("sw1.example.com-mosp.csv", files_dir_4)) {
-      full_path = paste(base_dir_4, "sw1.example.com-mosp.csv", sep = '/')
-      # Append the full path of the file to the list
-      files_sw_mosp <- c(files_sw_mosp, full_path)
-      # Use test_types to hold mapping between full file path and type of test:
-      test_types_sw_mosp[full_path] <- test_type
-      # Store the directory path:
-      dir_path_sw_mosp[full_path] <- base_dir_4
-    }
-  }
-}
+# Call function (see further up) to build file data:
+files <- fx_build_file_data("sw1.example.com-mosp.csv", files_dir_2)
 
 print ("Reading Switch mosp result CSV files into a list")
-# Read the Switch mosp result CSV files into a list:
-files_list_sw_mosp <- lapply(files_sw_mosp, read.csv)
+# Read the result CSV files into a list:
+files_list <- lapply(files$files, read.csv)
 
-# Data frame for Switch mosp results:
-# Set a blank data frame to put our results into:
-df_sw_mosp = data.frame()
-for (i in 1:length(files_list_sw_mosp)) {
-  test_type <- unname(test_types_sw_mosp[i])
-  dir_path <- unname(dir_path_sw_mosp[i])
-  x <- files_list_sw_mosp[[i]]$time
-  y1 <- files_list_sw_mosp[[i]]$sw1.cpu
-  y2 <- files_list_sw_mosp[[i]]$sw1.swap.in
-  y3 <- files_list_sw_mosp[[i]]$sw1.swap.out
-  y4 <- files_list_sw_mosp[[i]]$sw1.pkt.in
-  y5 <- files_list_sw_mosp[[i]]$sw1.pkt.out
-  #*** fill vector z1 with the test type:
-  z1 <- rep(test_type, length(x))
-  #*** fill vector z2 with the directory path:
-  z2 <- rep(dir_path, length(x))
-  d = data.frame(x, y1, y2, y3, y4, y5, z1, z2)
-  # Set appropriate column names.
-  colnames(d) <- c("Time", "Switch_CPU", "Switch_Swap_In", "Switch_Swap_Out", "Switch_Pkt_In", "Switch_Pkt_Out", "Test_Type", "Dir_Path")
-  # Accumulate the additional data rows:
-  df_sw_mosp = rbind(df_sw_mosp, d)
-}
-# Set Time column to POSIXct data type:
-df_sw_mosp$Time <- as.POSIXct(df_sw_mosp$Time)
+print ("Generating Switch mosp data frame")
+col_select <- c("sw1.cpu", "sw1.swap.in", "sw1.swap.out")
+col_names <- c("Switch_CPU", "Switch_Swap_In", "Switch_Swap_Out")
+df_sw_mosp <- fx_csv2df(files_list, files, col_select, col_names)
 
 # Create a data frame that is indexed by filt NFPS load:
 df_sw_mosp_filt = fx_index_by_load(df_sw_mosp, df_filt)
 
-# ===================== cxn-close analysis:
-files_cxn_close <- vector()
-test_types_cxn_close <- vector()
-dir_path_cxn_close <- vector()
-
-for (test_type in files_dir_2) {
-  base_dir_3 <- paste(base_dir_2, test_type, sep = '/')
-  files_dir_3 <- list.files(path=base_dir_3)
-  for (test_timestamp in files_dir_3) {
-    base_dir_4 <- paste(base_dir_3, test_timestamp, sep = '/')
-    files_dir_4 <- list.files(path=base_dir_4)
-    if (is.element("pc1.example.com-hort-cxn-close.csv", files_dir_4)) {
-      full_path = paste(base_dir_4, "pc1.example.com-hort-cxn-close.csv", sep = '/')
-      # Append the full path of the file to the list
-      files_cxn_close <- c(files_cxn_close, full_path)
-      # Use test_types to hold mapping between full file path and type of test:
-      test_types_cxn_close[full_path] <- test_type
-      # Store the directory path:
-      dir_path_cxn_close[full_path] <- base_dir_4
-    }
-  }
-}
+# ===================== hort client cxn-close analysis:
+# Call function (see further up) to build file data:
+files <- fx_build_file_data("pc1.example.com-hort-cxn-close.csv", files_dir_2)
 
 print ("Reading hort client cxn-close result CSV files into a list")
-# Read the pc1 connection close csv files into a list:
-files_list_cxn_close <- lapply(files_cxn_close, read.csv)
+# Read the result CSV files into a list:
+files_list <- lapply(files$files, read.csv)
 
-# Data frame for cxn-close object retrieval times:
-# Pull out the values we need and merge into a single data frame
-#  with a column of retrieval times, a column for test type,
-#  indexed against target rate:
-# Set a blank data frame to put our results into:
-df_cxn_close = data.frame()
-for (i in 1:length(files_list_cxn_close)) {
-  test_type <- unname(test_types_cxn_close[i])
-  dir_path <- unname(dir_path_cxn_close[i])
-  x <- files_list_cxn_close[[i]]$time
-  y <- files_list_cxn_close[[i]]$pc1.cxn.close.retrieval.time
-  #*** fill vector z1 with the test type:
-  z1 <- rep(test_type, length(x))
-  #*** fill vector z2 with the directory path:
-  z2 <- rep(dir_path, length(x))
-  d = data.frame(x, y, z1, z2)
-  # Set appropriate column names.
-  colnames(d) <- c("Time", "Object_Retrieval_Time", "Test_Type", "Dir_Path")
-  # Accumulate the additional data rows:
-  df_cxn_close = rbind(df_cxn_close, d)
-}
-# Set Time column to POSIXct data type:
-df_cxn_close$Time <- as.POSIXct(df_cxn_close$Time)
+print ("Generating hort client cxn-close data frame")
+col_select <- c("pc1.cxn.close.retrieval.time")
+col_names <- c("Object_Retrieval_Time")
+df_cxn_close <- fx_csv2df(files_list, files, col_select, col_names)
 
 # Create a data frame that is indexed by filt NFPS load:
 df_cxn_close_filt = fx_index_by_load(df_cxn_close, df_filt)
 
-# ===================== cxn-keepalive analysis:
-files_cxn_keepalive <- vector()
-test_types_cxn_keepalive <- vector()
-dir_path_cxn_keepalive <- vector()
-
-for (test_type in files_dir_2) {
-  base_dir_3 <- paste(base_dir_2, test_type, sep = '/')
-  files_dir_3 <- list.files(path=base_dir_3)
-  for (test_timestamp in files_dir_3) {
-    base_dir_4 <- paste(base_dir_3, test_timestamp, sep = '/')
-    files_dir_4 <- list.files(path=base_dir_4)
-    if (is.element("pc1.example.com-hort-cxn-keepalive.csv", files_dir_4)) {
-      full_path = paste(base_dir_4, "pc1.example.com-hort-cxn-keepalive.csv", sep = '/')
-      # Append the full path of the file to the list
-      files_cxn_keepalive <- c(files_cxn_keepalive, full_path)
-      # Use test_types to hold mapping between full file path and type of test:
-      test_types_cxn_keepalive[full_path] <- test_type
-      # Store the directory path:
-      dir_path_cxn_keepalive[full_path] <- base_dir_4
-    }
-  }
-}
+# ===================== hort client cxn-keepalive analysis:
+# Call function (see further up) to build file data:
+files <- fx_build_file_data("pc1.example.com-hort-cxn-keepalive.csv", files_dir_2)
 
 print ("Reading hort client cxn-keepalive result CSV files into a list")
-# Read the pc1 connection keepalive csv files into a list:
-files_list_cxn_keepalive <- lapply(files_cxn_keepalive, read.csv)
+# Read the result CSV files into a list:
+files_list <- lapply(files$files, read.csv)
 
-# Data frame for cxn-keepalive object retrieval times:
-# Pull out the values we need and merge into a single data frame
-#  with a column of retrieval times, a column for test type,
-#  indexed against target rate:
-# Set a blank data frame to put our results into:
-df_cxn_keepalive = data.frame()
-for (i in 1:length(files_list_cxn_keepalive)) {
-  test_type <- unname(test_types_cxn_keepalive[i])
-  dir_path <- unname(dir_path_cxn_keepalive[i])
-  x <- files_list_cxn_keepalive[[i]]$time
-  y <- files_list_cxn_keepalive[[i]]$pc1.cxn.keep.alive.retrieval.time
-  #*** fill vector z1 with the test type:
-  z1 <- rep(test_type, length(x))
-  #*** fill vector z2 with the directory path:
-  z2 <- rep(dir_path, length(x))
-  d = data.frame(x, y, z1, z2)
-  # Set appropriate column names.
-  colnames(d) <- c("Time", "Object_Retrieval_Time", "Test_Type", "Dir_Path")
-  # Accumulate the additional data rows:
-  df_cxn_keepalive = rbind(df_cxn_keepalive, d)
-}
-# Set Time column to POSIXct data type:
-df_cxn_keepalive$Time <- as.POSIXct(df_cxn_keepalive$Time)
+print ("Generating hort client cxn-keepalive data frame")
+col_select <- c("pc1.cxn.keep.alive.retrieval.time")
+col_names <- c("Object_Retrieval_Time")
+df_cxn_keepalive <- fx_csv2df(files_list, files, col_select, col_names)
 
 # Create a data frame that is indexed by filt NFPS load:
 df_cxn_keepalive_filt = fx_index_by_load(df_cxn_keepalive, df_filt)
@@ -485,6 +392,10 @@ fx_chart_scatter_1("Load_Rate", "Object_Retrieval_Time", "Test_Type", df_cxn_kee
 print("Controller mosp: creating CPU chart")
 fx_chart_scatter_1("Load_Rate", "Controller_CPU", "Test_Type", df_ct_mosp_filt, "Controller CPU vs New Flows Load by Test Type", "Load Rate", "CPU Load (%)")
 
+# Controller Swap In:
+print("Controller mosp: creating Swap In chart")
+fx_chart_scatter_1("Load_Rate", "Controller_Swap_In", "Test_Type", df_ct_mosp_filt, "Controller Swap In vs New Flows Load by Test Type", "Load Rate", "Swap In (Bytes) per interval")
+
 # Controller Swap Out:
 print("Controller mosp: creating Swap Out chart")
 fx_chart_scatter_1("Load_Rate", "Controller_Swap_Out", "Test_Type", df_ct_mosp_filt, "Controller Swap Out vs New Flows Load by Test Type", "Load Rate", "Swap Out (Bytes) per interval")
@@ -496,6 +407,10 @@ fx_chart_scatter_1("Load_Rate", "Controller_Pkt_In", "Test_Type", df_ct_mosp_fil
 # Switch CPU:
 print("Switch mosp: creating CPU chart")
 fx_chart_scatter_1("Load_Rate", "Switch_CPU", "Test_Type", df_sw_mosp_filt, "Switch CPU vs New Flows Load by Test Type", "Load Rate", "Switch CPU (%)")
+
+# Switch Swap In:
+print("Switch mosp: creating Swap In chart")
+fx_chart_scatter_1("Load_Rate", "Switch_Swap_In", "Test_Type", df_sw_mosp_filt, "Switch Swap In vs New Flows Load by Test Type", "Load Rate", "Swap In (Bytes) per interval")
 
 # Switch Swap Out:
 print("Switch mosp: creating Swap Out chart")
