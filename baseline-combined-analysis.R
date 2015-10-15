@@ -395,7 +395,10 @@ df_pkttime$avg <- as.numeric(df_pkttime$avg)
 df_pkttime$max_max <- as.numeric(df_pkttime$max_max)
 
 # Create a data frame that is indexed by filt NFPS load:
-df_pkttime_filt = fx_index_by_load(df_pkttime, df_filt)
+df_pkttime_filt <- fx_index_by_load(df_pkttime, df_filt)
+
+# Add a column for free time between packets:
+df_pkttime_filt$free_time <- (1 / df_pkttime_filt$Load_Rate) - df_pkttime_filt$avg
 
 # ============================= CHARTING ===============================
 
@@ -412,6 +415,10 @@ fx_chart_scatter_1("Load_Rate", "add_flow", "Test_Type", df_nmev_filt, "Controll
 # Add avg packet time chart:
 print("Packet Time avg: creating chart")
 fx_chart_scatter_1("Load_Rate", "avg", "Test_Type", df_pkttime_filt, "Controller Packet Processing Time", "Load Rate", "avg")
+
+# Add free packet time chart:
+print("Free Packet Time: creating chart")
+fx_chart_scatter_1("Load_Rate", "free_time", "Test_Type", df_pkttime_filt, "Free Time to Receive Packets", "Load Rate", "Free Time (s)")
 
 # Cxn-close chart:
 print("Client cxn-close: creating chart")
