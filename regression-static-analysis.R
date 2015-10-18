@@ -91,7 +91,7 @@ fx_build_file_data <- function(file_name, files_dir_2) {
 }
 
 # ============================= CSVs to DATA FRAME =====================
-fx_csv2df <- function(files_list, files, col_select, col_names) {
+fx_csv2df <- function(files_list, files) {
     # Passed a list of CSV file data frames, files information, specific
     # columns of interest and their final names and return a single 
     # data frame that incorporates all this information
@@ -133,14 +133,32 @@ print ("Reading Iperf result CSV files into a list")
 # Read the result CSV files into a list:
 files_list <- lapply(files$files, read.csv, header=FALSE)
 
-print ("Generating Iperf result data frame")
-col_select <- c("V8", "V9")
-col_names <- c("Transfer", "Bandwidth")
-df_iperf <- fx_csv2df(files_list, files, col_select, col_names)
+# Produce a data frame of just what we need in right format:
+df_iperf <- data.frame()
+for (i in 1:length(files_list)) {
+    test_type <- unname(files$test_types[i])
+    dir_path <- unname(files$dir_path[i])
+    df_tmp <- data.frame(i)
+    colnames(df_tmp)[1] = "Test Number"
+    # Add in the 'y' column(s):
+    df_tmp[2] <- files_list[[i]][,8]
+    df_tmp[3] <- files_list[[i]][,9]
+    colnames(df_tmp)[2] <- "Transfer"
+    colnames(df_tmp)[3] <- "Bandwidth"
+    #*** Add filled Test_Type column:
+    df_tmp$Test_Type <- test_type
+    #*** Add filled Dir_Path column:
+    df_tmp$Dir_Path <- dir_path
+    # Accumulate the additional data rows:
+    df_iperf = rbind(df_iperf, df_tmp)
+}
 
 # ============================= CHARTING ===============================
-# Call our function to create charts (see top of this program)
+# Plot results on a chart:
+g <- ggplot(df_iperf, aes(x=Test_Type, y=Bandwidth)) +
+    geom_point(shape=1) + scale_y_log10() + ggtitle("Static Regression") +
+    xlab("Test Type") +
+    ylab("Bandwidth (bps - Log10)")
+print (g)
 
-# Packet-in chart:
-#print("Packet-in: creating chart")
-#fx_chart_scatter_1("Load_Rate", "packet_in", "Test_Type", df_iperf, "Controller OpenFlow packet-in rate vs New Flows #Load", "Load Rate", "Packet-In Rate")
+
