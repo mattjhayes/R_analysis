@@ -60,6 +60,16 @@ fx_build_file_data <- function(file_name, files_dir_2) {
     return(returnList)
 }
 
+# =========================== CHART FACET (FRAME) LABELLER =============
+fx_chart_facet_labeller <- function(var, value){
+    value <- as.character(value)
+    if (var=="Test_Type") { 
+        value[value=="constrained-bw-tcp1234"] <- "TCP-1234 Constrained Bandwidth"
+        value[value=="constrained-bw-tcp5555"]   <- "TCP-5555 Constrained Bandwidth"
+    }
+    return(value)
+}
+
 # ===================== MAIN PROGRAM ===================================
 # Note: Iperf CSV format is:
 # Time, local_IP, local_port, server_IP, server_port, duration,
@@ -82,9 +92,9 @@ for (i in 1:length(files_list_1234)) {
     df_tmp <- data.frame(i)
     colnames(df_tmp)[1] = "Test Number"
     # Add in the 'y' column(s):
-    df_tmp[2] <- files_list_1234[[i]][,8]
+    df_tmp[2] <- files_list_1234[[i]][,5]
     df_tmp[3] <- files_list_1234[[i]][,9]
-    colnames(df_tmp)[2] <- "Transfer"
+    colnames(df_tmp)[2] <- "TCP_Port"
     colnames(df_tmp)[3] <- "Bandwidth"
     #*** Add filled Test_Type column:
     df_tmp$Test_Type <- test_type
@@ -102,9 +112,9 @@ for (i in 1:length(files_list_5555)) {
     df_tmp <- data.frame(i)
     colnames(df_tmp)[1] = "Test Number"
     # Add in the 'y' column(s):
-    df_tmp[2] <- files_list_5555[[i]][,8]
+    df_tmp[2] <- files_list_5555[[i]][,5]
     df_tmp[3] <- files_list_5555[[i]][,9]
-    colnames(df_tmp)[2] <- "Transfer"
+    colnames(df_tmp)[2] <- "TCP_Port"
     colnames(df_tmp)[3] <- "Bandwidth"
     #*** Add filled Test_Type column:
     df_tmp$Test_Type <- test_type
@@ -114,29 +124,17 @@ for (i in 1:length(files_list_5555)) {
     df_iperf_5555 = rbind(df_iperf_5555, df_tmp)
 }
 
-# Produce a merged data frame
-df_combined <-merge(df_iperf_1234, df_iperf_5555, all=T, by="Test Number")
-colnames(df_combined)[names(df_combined)=="Transfer.x"] <- "Transfer TCP-1234"
-colnames(df_combined)[names(df_combined)=="Bandwidth.x"] <- "Bandwidth TCP-1234"
-colnames(df_combined)[names(df_combined)=="Transfer.y"] <- "Transfer TCP-5555"
-colnames(df_combined)[names(df_combined)=="Bandwidth.y"] <- "Bandwidth TCP-5555"
-colnames(df_combined)[names(df_combined)=="Test_Type.x"] <- "Test_Type"
-colnames(df_combined)[names(df_combined)=="Dir_Path.x"] <- "Dir_Path"
-drops <- c("Test_Type.y","Dir_Path.y")
-df_combined <- df_combined[,!(names(df_combined) %in% drops)]
+# Produce a merged data frame:
+df_combined <-merge(df_iperf_1234, df_iperf_5555, all=T)
+# Convert TCP Port to a factor:
+df_combined$TCP_Port <- as.factor(df_combined$TCP_Port)
 
 # ============================= CHARTING ===============================
 # Plot results on a chart:
-g <- ggplot(df_iperf_1234, aes(x=Test_Type, y=Bandwidth)) +
-    geom_point(shape=1) + scale_y_log10() + ggtitle("Static Regression TCP-1234") +
-    xlab("Test Type") +
+g <- ggplot(df_combined, aes(x=TCP_Port, y=Bandwidth)) +
+    geom_point(shape=1) +
+    facet_grid(. ~ Test_Type, labeller=fx_chart_facet_labeller) +
+    scale_y_log10() + ggtitle("Static Regression Tests") +
+    xlab("TCP Port") +
     ylab("Bandwidth (bps - Log10)")
 print (g)
-
-g <- ggplot(df_iperf_5555, aes(x=Test_Type, y=Bandwidth)) +
-    geom_point(shape=1) + scale_y_log10() + ggtitle("Static Regression TCP-5555") +
-    xlab("Test Type") +
-    ylab("Bandwidth (bps - Log10)")
-print (g)
-
-
