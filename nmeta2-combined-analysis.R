@@ -2,7 +2,7 @@
 
 # Run in rstudio with:
 
-# source("~/R_analysis/noisy-neighbour-analysis.R")
+# source("~/R_analysis/nmeta2-combined-analysis.R")
 
 # Imports:
 libs <- c('ggplot2', 'latticeExtra', 'gridExtra', 'MASS', 
@@ -10,7 +10,7 @@ libs <- c('ggplot2', 'latticeExtra', 'gridExtra', 'MASS',
 lapply(libs, require, character.only = T)
 
 # Base directory where results data is stored:
-base_dir <- "~/results/noisy-neighbour-tests/"
+base_dir <- "~/results/nmeta2-combined/"
 
 # Ask for the sub-directory that the results are in:
 test_dir_1 <- readline("What is name of directory?")
@@ -222,33 +222,6 @@ for (i in 1:length(files_list_filt)) {
 # Set Time column to POSIXct data type:
 df_filt$Time <- as.POSIXct(df_filt$Time)
 
-# ===================== Extra Data Frame for Noisy Neighbour Analysis:
-# Pull out the values we need and merge into a single data frame
-#  with a column of retrieval times, a column for test type,
-#  indexed against target rate:
-# Set a blank data frame to put our results into:
-df_noisy = data.frame()
-for (i in 1:length(files_list_filt)) {
-  test_type <- unname(test_types_filt[i])
-  dir_path <- unname(dir_path_filt[i])
-  x <- files_list_filt[[i]]$time
-  y0 <- files_list_filt[[i]]$previous.target.rate.pps.
-  y1 <- files_list_filt[[i]]$previous.actual.rate.pps.
-  y2 <- files_list_filt[[i]]$previous.interpacket.max.rate
-  y3 <- files_list_filt[[i]]$previous.interpacket.min.rate
-  #*** fill vector z1 with the test type:
-  z1 <- rep(test_type, length(x))
-  #*** fill vector z2 with the directory path:
-  z2 <- rep(dir_path, length(x))
-  d = data.frame(x, y0, y1, y2, y3, z1, z2)
-  # Set appropriate column names.
-  colnames(d) <- c("Time", "Previous_Target_Rate", "Previous_Actual_Rate", "Previous_Interpacket_Max_Rate", "Previous_Interpacket_Min_Rate", "Test_Type", "Dir_Path")
-  # Accumulate the additional data rows:
-  df_noisy = rbind(df_noisy, d)
-}
-# Set Time column to POSIXct data type:
-df_noisy$Time <- as.POSIXct(df_noisy$Time)
-
 # ===================== Controller OS analysis:
 # Call function (see further up) to build file data:
 files <- fx_build_file_data("ct1.example.com-mosp.csv", files_dir_2)
@@ -265,45 +238,111 @@ df_ct_mosp <- fx_csv2df(files_list, files, col_select, col_names)
 # Create a data frame that is indexed by filt NFPS load:
 df_ct_mosp_filt = fx_index_by_load(df_ct_mosp, df_filt)
 
-# ===================== Client OS analysis:
+# ===================== Switch OS analysis:
 # Call function (see further up) to build file data:
-files <- fx_build_file_data("pc1.example.com-mosp.csv", files_dir_2)
+files <- fx_build_file_data("sw1.example.com-mosp.csv", files_dir_2)
 
-print ("Reading Client mosp result CSV files into a list")
+print ("Reading Switch mosp result CSV files into a list")
 # Read the result CSV files into a list:
 files_list <- lapply(files$files, read.csv)
 
-print ("Generating Client mosp data frame")
-col_select <- c("pc1.cpu", "pc1.swap.in", "pc1.swap.out", "pc1.pkt.in", "pc1.pkt.out")
-col_names <- c("Client_CPU", "Client_Swap_In", "Client_Swap_Out", "Client_Pkt_In", "Client_Pkt_Out")
-df_pc_mosp <- fx_csv2df(files_list, files, col_select, col_names)
+print ("Generating Switch mosp data frame")
+col_select <- c("sw1.cpu", "sw1.swap.in", "sw1.swap.out")
+col_names <- c("Switch_CPU", "Switch_Swap_In", "Switch_Swap_Out")
+df_sw_mosp <- fx_csv2df(files_list, files, col_select, col_names)
 
 # Create a data frame that is indexed by filt NFPS load:
-df_pc_mosp_filt = fx_index_by_load(df_pc_mosp, df_filt)
+df_sw_mosp_filt = fx_index_by_load(df_sw_mosp, df_filt)
+
+# ===================== hort client cxn-close analysis:
+# Call function (see further up) to build file data:
+files <- fx_build_file_data("pc1.example.com-hort-cxn-close.csv", files_dir_2)
+
+print ("Reading hort client cxn-close result CSV files into a list")
+# Read the result CSV files into a list:
+files_list <- lapply(files$files, read.csv)
+
+print ("Generating hort client cxn-close data frame")
+col_select <- c("pc1.cxn.close.retrieval.time")
+col_names <- c("Object_Retrieval_Time")
+df_cxn_close <- fx_csv2df(files_list, files, col_select, col_names)
+
+# Create a data frame that is indexed by filt NFPS load:
+df_cxn_close_filt = fx_index_by_load(df_cxn_close, df_filt)
+
+# ===================== hort client cxn-keepalive analysis:
+# Call function (see further up) to build file data:
+files <- fx_build_file_data("pc1.example.com-hort-cxn-keepalive.csv", files_dir_2)
+
+print ("Reading hort client cxn-keepalive result CSV files into a list")
+# Read the result CSV files into a list:
+files_list <- lapply(files$files, read.csv)
+
+print ("Generating hort client cxn-keepalive data frame")
+col_select <- c("pc1.cxn.keep.alive.retrieval.time")
+col_names <- c("Object_Retrieval_Time")
+df_cxn_keepalive <- fx_csv2df(files_list, files, col_select, col_names)
+
+# Create a data frame that is indexed by filt NFPS load:
+df_cxn_keepalive_filt = fx_index_by_load(df_cxn_keepalive, df_filt)
+
+# ========== DELETED NMETA EVENTRATE AND PACKETTIME FROM HERE ==========
 
 # ============================= CHARTING ===============================
 
 # Call our function to create charts (see top of this program)
 
+# Packet-in chart:
+#print("Packet-in: creating chart")
+#fx_chart_scatter_1("Load_Rate", "packet_in", "Test_Type", df_nmev_filt, "Controller OpenFlow packet-in rate vs New #Flows Load", "Load Rate", "Packet-In Rate")
+
+# Add flow chart:
+#print("Add-flow: creating chart")
+#fx_chart_scatter_1("Load_Rate", "add_flow", "Test_Type", df_nmev_filt, "Controller OpenFlow Add Flow Rate", "Load #Rate", "Add Flow Rate")
+
+# Add avg packet time chart:
+#print("Packet Time avg: creating chart")
+#fx_chart_scatter_1("Load_Rate", "avg", "Test_Type", df_pkttime_filt, "Controller Packet Processing Time", "Load Rate", #"avg")
+
+# Add free packet time chart:
+#print("Free Packet Time: creating chart")
+#fx_chart_scatter_1("Load_Rate", "free_time", "Test_Type", df_pkttime_filt, "Free Time to Receive Packets", "Load Rate", #"Free Time (s)")
+
+# Cxn-close chart:
+print("Client cxn-close: creating chart")
+fx_chart_scatter_1("Load_Rate", "Object_Retrieval_Time", "Test_Type", df_cxn_close_filt, "Connection Close Retrieval Time vs New Flows Load by Test Type", "Load Rate", "Object Retrieval Time (seconds)")
+
+# Cxn-keepalive chart:
+print("Client cxn-keepalive: creating chart")
+fx_chart_scatter_1("Load_Rate", "Object_Retrieval_Time", "Test_Type", df_cxn_keepalive_filt, "Connection Keepalive Retrieval Time vs New Flows Load by Test Type", "Load Rate", "Object Retrieval Time (seconds)")
+
 # Controller CPU:
 print("Controller mosp: creating CPU chart")
 fx_chart_scatter_1("Load_Rate", "Controller_CPU", "Test_Type", df_ct_mosp_filt, "Controller CPU vs New Flows Load by Test Type", "Load Rate", "CPU Load (%)")
 
-# Client CPU:
-print("Client mosp: creating CPU chart")
-fx_chart_scatter_1("Load_Rate", "Client_CPU", "Test_Type", df_pc_mosp_filt, "Client CPU vs New Flows Load by Test Type", "Load Rate", "CPU Load (%)")
+# Controller Swap In:
+print("Controller mosp: creating Swap In chart")
+fx_chart_scatter_1("Load_Rate", "Controller_Swap_In", "Test_Type", df_ct_mosp_filt, "Controller Swap In vs New Flows Load by Test Type", "Load Rate", "Swap In (Bytes) per interval")
+
+# Controller Swap Out:
+print("Controller mosp: creating Swap Out chart")
+fx_chart_scatter_1("Load_Rate", "Controller_Swap_Out", "Test_Type", df_ct_mosp_filt, "Controller Swap Out vs New Flows Load by Test Type", "Load Rate", "Swap Out (Bytes) per interval")
+
+# Controller Ethernet Packets In:
+print("Controller mosp: creating Packets In chart")
+fx_chart_scatter_1("Load_Rate", "Controller_Pkt_In", "Test_Type", df_ct_mosp_filt, "Controller Ethernet Packets In vs New Flows Load by Test Type", "Load Rate", "Packets Received per Interval")
+
+# Switch CPU:
+print("Switch mosp: creating CPU chart")
+fx_chart_scatter_1("Load_Rate", "Switch_CPU", "Test_Type", df_sw_mosp_filt, "Switch CPU vs New Flows Load by Test Type", "Load Rate", "Switch CPU (%)")
+
+# Switch Swap In:
+print("Switch mosp: creating Swap In chart")
+fx_chart_scatter_1("Load_Rate", "Switch_Swap_In", "Test_Type", df_sw_mosp_filt, "Switch Swap In vs New Flows Load by Test Type", "Load Rate", "Swap In (Bytes) per interval")
+
+# Switch Swap Out:
+print("Switch mosp: creating Swap Out chart")
+fx_chart_scatter_1("Load_Rate", "Switch_Swap_Out", "Test_Type", df_sw_mosp_filt, "Switch Swap Out vs New Flows Load by Test Type", "Load Rate", "Swap Out (Bytes) per interval")
 
 
-# ================ Noisy Neighbour Impact Charts:
 
-# Filt Performance (Actual Rate):
-print("Filt Performance (Actual Rate)")
-fx_chart_scatter_1("Previous_Target_Rate", "Previous_Actual_Rate", "Test_Type", df_noisy, "Filt Actual Rate vs Target Rate by Test Type", "Previous Target Rate", "Previous Actual Rate")
-
-# Filt Performance (Previous_Interpacket_Max_Rate):
-print("Filt Performance (Previous_Interpacket_Max_Rate)")
-fx_chart_scatter_1("Previous_Target_Rate", "Previous_Interpacket_Max_Rate", "Test_Type", df_noisy, "Filt Actual Rate vs Previous Interpacket Max Rate by Test Type", "Previous Target Rate", "Previous Interpacket Max Rate")
-
-# Filt Performance (Previous_Interpacket_Min_Rate):
-print("Filt Performance (Previous_Interpacket_Min_Rate)")
-fx_chart_scatter_1("Previous_Target_Rate", "Previous_Interpacket_Min_Rate", "Test_Type", df_noisy, "Filt Actual Rate vs Previous Interpacket Min Rate by Test Type", "Previous Target Rate", "Previous Interpacket Min Rate")
