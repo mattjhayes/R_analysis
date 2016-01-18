@@ -254,6 +254,22 @@ df_sw_mosp <- fx_csv2df(files_list, files, col_select, col_names)
 # Create a data frame that is indexed by filt NFPS load:
 df_sw_mosp_filt = fx_index_by_load(df_sw_mosp, df_filt)
 
+# ===================== DPAE OS analysis:
+# Call function (see further up) to build file data:
+files <- fx_build_file_data("dp1.example.com-mosp.csv", files_dir_2)
+
+print ("Reading DPAE mosp result CSV files into a list")
+# Read the result CSV files into a list:
+files_list <- lapply(files$files, read.csv)
+
+print ("Generating DPAE mosp data frame")
+col_select <- c("dp1.cpu", "dp1.swap.in", "dp1.swap.out", "dp1.pkt.in", "dp1.pkt.out")
+col_names <- c("DPAE_CPU", "DPAE_Swap_In", "DPAE_Swap_Out", "DPAE_Pkt_In", "DPAE_Pkt_Out")
+df_dp_mosp <- fx_csv2df(files_list, files, col_select, col_names)
+
+# Create a data frame that is indexed by filt NFPS load:
+df_dp_mosp_filt = fx_index_by_load(df_dp_mosp, df_filt)
+
 # ===================== hort client cxn-close analysis:
 # Call function (see further up) to build file data:
 files <- fx_build_file_data("pc1.example.com-hort-cxn-close.csv", files_dir_2)
@@ -292,22 +308,6 @@ df_cxn_keepalive_filt = fx_index_by_load(df_cxn_keepalive, df_filt)
 
 # Call our function to create charts (see top of this program)
 
-# Packet-in chart:
-#print("Packet-in: creating chart")
-#fx_chart_scatter_1("Load_Rate", "packet_in", "Test_Type", df_nmev_filt, "Controller OpenFlow packet-in rate vs New #Flows Load", "Load Rate", "Packet-In Rate")
-
-# Add flow chart:
-#print("Add-flow: creating chart")
-#fx_chart_scatter_1("Load_Rate", "add_flow", "Test_Type", df_nmev_filt, "Controller OpenFlow Add Flow Rate", "Load #Rate", "Add Flow Rate")
-
-# Add avg packet time chart:
-#print("Packet Time avg: creating chart")
-#fx_chart_scatter_1("Load_Rate", "avg", "Test_Type", df_pkttime_filt, "Controller Packet Processing Time", "Load Rate", #"avg")
-
-# Add free packet time chart:
-#print("Free Packet Time: creating chart")
-#fx_chart_scatter_1("Load_Rate", "free_time", "Test_Type", df_pkttime_filt, "Free Time to Receive Packets", "Load Rate", #"Free Time (s)")
-
 # Cxn-close chart:
 print("Client cxn-close: creating chart")
 fx_chart_scatter_1("Load_Rate", "Object_Retrieval_Time", "Test_Type", df_cxn_close_filt, "Connection Close Retrieval Time vs New Flows Load by Test Type", "Load Rate", "Object Retrieval Time (seconds)")
@@ -344,5 +344,24 @@ fx_chart_scatter_1("Load_Rate", "Switch_Swap_In", "Test_Type", df_sw_mosp_filt, 
 print("Switch mosp: creating Swap Out chart")
 fx_chart_scatter_1("Load_Rate", "Switch_Swap_Out", "Test_Type", df_sw_mosp_filt, "Switch Swap Out vs New Flows Load by Test Type", "Load Rate", "Swap Out (Bytes) per interval")
 
+# DPAE CPU:
+print("DPAE mosp: creating CPU chart")
+fx_chart_scatter_1("Load_Rate", "DPAE_CPU", "Test_Type", df_dp_mosp_filt, "DPAE CPU vs New Flows Load by Test Type", "Load Rate", "DPAE CPU (%)")
+
+# DPAE Swap In:
+print("DPAE mosp: creating Swap In chart")
+fx_chart_scatter_1("Load_Rate", "DPAE_Swap_In", "Test_Type", df_dp_mosp_filt, "DPAE Swap In vs New Flows Load by Test Type", "Load Rate", "Swap In (Bytes) per interval")
+
+# DPAE Swap Out:
+print("DPAE mosp: creating Swap Out chart")
+fx_chart_scatter_1("Load_Rate", "DPAE_Swap_Out", "Test_Type", df_dp_mosp_filt, "DPAE Swap Out vs New Flows Load by Test Type", "Load Rate", "Swap Out (Bytes) per interval")
+
+# DPAE Ethernet Packets In:
+print("DPAE mosp: creating Packets In chart")
+fx_chart_scatter_1("Load_Rate", "DPAE_Pkt_In", "Test_Type", df_dp_mosp_filt, "DPAE Ethernet Packets In vs New Flows Load by Test Type", "Load Rate", "Packets Received per Interval")
+
+# DPAE Ethernet Packets Out:
+print("DPAE mosp: creating Packets Out chart")
+fx_chart_scatter_1("Load_Rate", "DPAE_Pkt_Out", "Test_Type", df_dp_mosp_filt, "DPAE Ethernet Packets Out vs New Flows Load by Test Type", "Load Rate", "Packets Sent per Interval")
 
 
