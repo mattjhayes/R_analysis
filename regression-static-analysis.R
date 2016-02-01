@@ -10,12 +10,16 @@ libs <- c('ggplot2', 'latticeExtra', 'gridExtra', 'MASS',
 lapply(libs, require, character.only = T)
 
 # Base directory where results data is stored:
-base_dir <- "~/results/regression/nmeta-static/"
+base_dir <- "~/results/regression/"
+
+# Get the old or new subdirectory from the user
+nmeta_version <- readline("nmeta-static or nmeta2-static?")
+base_dir <- paste(base_dir, nmeta_version, sep = '')
 
 # Ask for the sub-directory that the results are in:
 test_dir_1 <- readline("What is name of directory?")
 
-base_dir_2 <- paste(base_dir, test_dir_1, sep = '')
+base_dir_2 <- paste(base_dir, test_dir_1, sep = '/')
 
 print(paste0("Looking for test result data in ", base_dir_2))
 
