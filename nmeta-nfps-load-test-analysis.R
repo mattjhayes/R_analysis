@@ -2,7 +2,7 @@
 
 # Run in rstudio with:
 
-# source("~/R_analysis/baseline-combined-analysis.R")
+# source("~/R_analysis/nmeta-nfps-load-test-analysis.R")
 
 # Imports:
 libs <- c('ggplot2', 'latticeExtra', 'gridExtra', 'MASS', 
@@ -10,7 +10,7 @@ libs <- c('ggplot2', 'latticeExtra', 'gridExtra', 'MASS',
 lapply(libs, require, character.only = T)
 
 # Base directory where results data is stored:
-base_dir <- "~/results/baseline-combined/"
+base_dir <- "~/results/nfps-load-tests/nmeta-combined/"
 
 # Ask for the sub-directory that the results are in:
 test_dir_1 <- readline("What is name of directory?")
