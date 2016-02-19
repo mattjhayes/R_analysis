@@ -88,7 +88,7 @@ print ("Reading Iperf result CSV files into a list")
 files_list_lg <- lapply(files_lg$files, read.csv, header=FALSE)
 files_list_pc <- lapply(files_pc$files, read.csv, header=FALSE)
 
-# Produce a data frame of just what we need in right format for tcp-1234:
+# Produce a data frame of just what we need in right format:
 df_iperf_lg <- data.frame()
 for (i in 1:length(files_list_lg)) {
     test_type <- unname(files_lg$test_types[i])
@@ -102,13 +102,15 @@ for (i in 1:length(files_list_lg)) {
     colnames(df_tmp)[3] <- "Bandwidth"
     #*** Add filled Test_Type column:
     df_tmp$Test_Type <- test_type
+    #*** Add filled Hostname column:
+    df_tmp$Hostname <- "lg1.example.com"
     #*** Add filled Dir_Path column:
     df_tmp$Dir_Path <- dir_path
     # Accumulate the additional data rows:
     df_iperf_lg = rbind(df_iperf_lg, df_tmp)
 }
 
-# Produce a data frame of just what we need in right format for tcp-5555:
+# Produce a data frame of just what we need in right format:
 df_iperf_pc <- data.frame()
 for (i in 1:length(files_list_pc)) {
     test_type <- unname(files_pc$test_types[i])
@@ -122,6 +124,8 @@ for (i in 1:length(files_list_pc)) {
     colnames(df_tmp)[3] <- "Bandwidth"
     #*** Add filled Test_Type column:
     df_tmp$Test_Type <- test_type
+    #*** Add filled Hostname column:
+    df_tmp$Hostname <- "pc1.example.com"
     #*** Add filled Dir_Path column:
     df_tmp$Dir_Path <- dir_path
     # Accumulate the additional data rows:
@@ -130,15 +134,13 @@ for (i in 1:length(files_list_pc)) {
 
 # Produce a merged data frame:
 df_combined <-merge(df_iperf_lg, df_iperf_pc, all=T)
-# Convert TCP Port to a factor:
-df_combined$TCP_Port <- as.factor(df_combined$TCP_Port)
 
 # ============================= CHARTING ===============================
 # Plot results on a chart:
-g <- ggplot(df_combined, aes(x=TCP_Port, y=Bandwidth)) +
+g <- ggplot(df_combined, aes(x=Hostname, y=Bandwidth)) +
     geom_point(shape=1) +
     facet_grid(. ~ Test_Type, labeller=fx_chart_facet_labeller) +
     scale_y_log10() + ggtitle("Identity Regression Tests") +
-    xlab("TCP Port") +
+    xlab("Hostname") +
     ylab("Bandwidth (bps - Log10)")
 print (g)
