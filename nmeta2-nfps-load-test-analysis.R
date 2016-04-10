@@ -1,5 +1,7 @@
 # Analyse results from a new flow per second (NFPS) load test
 
+# Version 0.2.0
+
 # Run in rstudio with:
 
 # source("~/R_analysis/nmeta2-nfps-load-test-analysis.R")
@@ -141,12 +143,21 @@ fx_csv2df <- function(files_list, files, col_select, col_names) {
     for (i in 1:length(files_list)) {
         test_type <- unname(files$test_types[i])
         dir_path <- unname(files$dir_path[i])
+
+        # TEMP PRINT:
+        cat(sprintf("fx_csv2df: test_type=\"%s\" dir_path=\"%s\"\n", test_type, dir_path))
+        
         x <- files_list[[i]]$time
         df_tmp <- data.frame(x)
         colnames(df_tmp)[1] = "Time"
         # Add in the 'y' column(s):
         j <- 2
+        
         for (col_y in col_select) {
+
+            # TEMP PRINT:
+            cat(sprintf("fx_csv2df: col_y=\"%s\" \n", col_y))
+        
             df_tmp$col_y <- files_list[[i]][,col_y]
             colnames(df_tmp)[j] <- col_names[j - 1]
             j <- j + 1
@@ -231,7 +242,7 @@ print ("Reading Controller mosp result CSV files into a list")
 files_list <- lapply(files$files, read.csv)
 
 print ("Generating Controller mosp data frame")
-col_select <- c("ct1.cpu", "ct1.swap.in", "ct1.swap.out", "ct1.pkt.in", "ct1.pkt.out")
+col_select <- c("ct1.cpu.0.", "ct1.swap.in", "ct1.swap.out", "ct1.pkts.in.eth1.", "ct1.pkts.out.eth1.")
 col_names <- c("Controller_CPU", "Controller_Swap_In", "Controller_Swap_Out", "Controller_Pkt_In", "Controller_Pkt_Out")
 df_ct_mosp <- fx_csv2df(files_list, files, col_select, col_names)
 
@@ -247,7 +258,7 @@ print ("Reading Switch mosp result CSV files into a list")
 files_list <- lapply(files$files, read.csv)
 
 print ("Generating Switch mosp data frame")
-col_select <- c("sw1.cpu", "sw1.swap.in", "sw1.swap.out")
+col_select <- c("sw1.cpu.0.", "sw1.swap.in", "sw1.swap.out")
 col_names <- c("Switch_CPU", "Switch_Swap_In", "Switch_Swap_Out")
 df_sw_mosp <- fx_csv2df(files_list, files, col_select, col_names)
 
