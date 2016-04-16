@@ -42,8 +42,12 @@ import re
 #*** Constants for filenames to process:
 FILENAME_IPERF_START = 'iperf_starttime.txt'
 FILENAME_FLOWUPDATES = 'sw1.example.com-OF-snooping.txt'
+FILENAME_FLOWTABLE = 'sw1.example.com-flows.txt'
+
 #*** File to write traffic treatment time to:
 FILENAME_TT = 'post_process_treatment_time_delta.txt'
+#*** File to write errors to:
+FILENAME_ERROR = 'error.txt'
 
 #*** Timezones (for conversions to UTC):
 UTC = pytz.utc
@@ -59,16 +63,54 @@ def main():
     """
     Main function
     """
-    treatment_time = 0
+    #*** Get the time for when the Iperf test was started:
+    iperf_starttime = get_iperf_starttime()
 
+    #*** Get the time when treatment was applied on the switch:
+    treatment_time = get_treatment_time()
+
+    #*** Calculate the delta between Iperf start and traffic treatment:
+    if iperf_starttime and treatment_time:
+        delta = treatment_time - iperf_starttime
+        print("delta seconds is ", delta.total_seconds())
+        #*** Write result to file:
+        treatment_result_filename = os.path.join(TEST_DIR, FILENAME_TT)
+        with open(treatment_result_filename, 'w') as f:
+            print(delta.total_seconds(), file=f)
+    else:
+        #*** Uh-oh, something must have gone wrong... Lets write
+        #*** something to file for triage later:
+        error_filename = os.path.join(TEST_DIR, FILENAME_ERROR)
+        with open(error_filename, 'a') as f:
+            print("Error iperf_starttime=",
+                    iperf_starttime, "treatment_time=",
+                    treatment_time, file=f)
+        sys.exit("Uh-oh, something must have gone wrong...")
+
+def get_iperf_starttime():
+    """
+    Return the Iperf test start time, or 0 if error
+    """
+    iperf_st = 0
     #*** Read in the Iperf start time:
     filename = os.path.join(TEST_DIR, FILENAME_IPERF_START)
     with open(filename, 'r') as f:
-        iperf_starttime = f.readline()
-    iperf_starttime = datetime.fromtimestamp(float(iperf_starttime))
-    iperf_starttime_datetime_tz = LOCAL_TZ.localize(iperf_starttime)
-    print("Iperf was started at", iperf_starttime_datetime_tz)
+        iperf_st = f.readline()
+    if iperf_st:
+        iperf_st = datetime.fromtimestamp(float(iperf_st))
+        iperf_st_tz = LOCAL_TZ.localize(iperf_st)
+        print("Iperf was started at", iperf_st_tz)
+        return iperf_st_tz
+    else:
+        print("Error finding Iperf start time")
+        return 0
 
+def get_treatment_time():
+    """
+    Return the time when treatment was applied on the switch,
+    or 0 if error
+    """
+    treatment_time = 0
     #*** Read in the TC Flow Entry (Treatment) Install Time on Switch:
     filename = os.path.join(TEST_DIR, FILENAME_FLOWUPDATES)
     with open(filename, 'r') as f:
@@ -77,29 +119,11 @@ def main():
                 #*** Call function to check the line to see if it is
                 #***  a treatment and if so return time in UTC timezone:
                 treatment_time = check_snoop_line(line, UTC)
-
-    if not treatment_time:
-        print("WARNING: failed to find a treatment entry")
-
-    #*** Calculate the delta between Iperf start and traffic treatment:
-    if iperf_starttime_datetime_tz and treatment_time:
-        delta = treatment_time - iperf_starttime_datetime_tz
-        print("delta seconds is ", delta.total_seconds())
-        #*** Write result to file:
-        treatment_result_filename = os.path.join(TEST_DIR, FILENAME_TT)
-        with open(treatment_result_filename, 'w') as f:
-            print(delta.total_seconds(), file=f)
-        # TBD
-
-
+    if treatment_time:
+        return treatment_time
     else:
-        #*** Uh-oh, something must have gone wrong... Lets write
-        #*** something to file for triage later:
-
-        # TBD
-
-        sys.exit("Uh-oh, something must have gone wrong...")
-
+        print("WARNING: failed to find a treatment entry")
+        return 0
 
 def check_snoop_line(snoop_line, timezone):
     """
