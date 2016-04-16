@@ -92,7 +92,7 @@ def main():
         #*** Write to file:
         write_result(FILENAME_DPAE_PKTS, packets_to_dpae)
     else:
-        write_error('packets_to_dpae')
+        write_error("Error: packets_to_dpae is zero")
 
 def get_iperf_starttime():
     """
