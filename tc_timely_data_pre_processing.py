@@ -23,9 +23,11 @@ files to pre-process
 Example:
 
 ./tc_timely_data_pre_processing.py ~/results/timeliness/statistical \
-     /20160414211230/nmeta2-constrained-bw-iperf/20160414211435
+     /20160414211230/nmeta2-constrained-bw-iperf/20160414211648
 
 """
+#*** For writing to file:
+from __future__ import print_function
 
 import os, sys
 
@@ -40,6 +42,8 @@ import re
 #*** Constants for filenames to process:
 FILENAME_IPERF_START = 'iperf_starttime.txt'
 FILENAME_FLOWUPDATES = 'sw1.example.com-OF-snooping.txt'
+#*** File to write traffic treatment time to:
+FILENAME_TT = 'post_process_treatment_time_delta.txt'
 
 #*** Timezones (for conversions to UTC):
 UTC = pytz.utc
@@ -50,6 +54,52 @@ assert len(sys.argv) == 2
 
 #*** Get parameters from command line
 TEST_DIR = sys.argv[1]
+
+def main():
+    """
+    Main function
+    """
+    treatment_time = 0
+
+    #*** Read in the Iperf start time:
+    filename = os.path.join(TEST_DIR, FILENAME_IPERF_START)
+    with open(filename, 'r') as f:
+        iperf_starttime = f.readline()
+    iperf_starttime = datetime.fromtimestamp(float(iperf_starttime))
+    iperf_starttime_datetime_tz = LOCAL_TZ.localize(iperf_starttime)
+    print("Iperf was started at", iperf_starttime_datetime_tz)
+
+    #*** Read in the TC Flow Entry (Treatment) Install Time on Switch:
+    filename = os.path.join(TEST_DIR, FILENAME_FLOWUPDATES)
+    with open(filename, 'r') as f:
+        for line in f.readlines():
+            if not treatment_time:
+                #*** Call function to check the line to see if it is
+                #***  a treatment and if so return time in UTC timezone:
+                treatment_time = check_snoop_line(line, UTC)
+
+    if not treatment_time:
+        print("WARNING: failed to find a treatment entry")
+
+    #*** Calculate the delta between Iperf start and traffic treatment:
+    if iperf_starttime_datetime_tz and treatment_time:
+        delta = treatment_time - iperf_starttime_datetime_tz
+        print("delta seconds is ", delta.total_seconds())
+        #*** Write result to file:
+        treatment_result_filename = os.path.join(TEST_DIR, FILENAME_TT)
+        with open(treatment_result_filename, 'w') as f:
+            print(delta.total_seconds(), file=f)
+        # TBD
+
+
+    else:
+        #*** Uh-oh, something must have gone wrong... Lets write
+        #*** something to file for triage later:
+
+        # TBD
+
+        sys.exit("Uh-oh, something must have gone wrong...")
+
 
 def check_snoop_line(snoop_line, timezone):
     """
@@ -69,52 +119,16 @@ def check_snoop_line(snoop_line, timezone):
                 re.search(r"actions\=set_queue\:1\,goto\_table\:5",
                 snoop_line)
         if treatment_match:
-            print "matched treatment on line ", snoop_line
+            print("matched treatment on line ", snoop_line)
             tt_datetime = of_snoop_match.group(1)
             pattern = '%Y-%m-%d %H:%M:%S.%f'
             tt_datetime2 = datetime.strptime(tt_datetime, pattern)
             tt_datetime2_tz = timezone.localize(tt_datetime2)
-            print "treatment_time_tz is ", tt_datetime2_tz
+            print("treatment_time_tz is ", tt_datetime2_tz)
             return tt_datetime2_tz
     return 0
 
 if __name__ == '__main__':
-    #=========== MAIN PROGRAM =====================
-    treatment_time = 0
-
-    #*** Read in the Iperf start time:
-    FILENAME = os.path.join(TEST_DIR, FILENAME_IPERF_START)
-    with open(FILENAME, 'r') as f:
-        IPERF_STARTTIME = f.readline()
-    iperf_starttime = datetime.fromtimestamp(float(IPERF_STARTTIME))
-    iperf_starttime_datetime_tz = LOCAL_TZ.localize(iperf_starttime)
-    print "Iperf was started at", iperf_starttime_datetime_tz
-
-    #*** Read in the TC Flow Entry (Treatment) Install Time on Switch:
-    FILENAME = os.path.join(TEST_DIR, FILENAME_FLOWUPDATES)
-    with open(FILENAME, 'r') as f:
-        for line in f.readlines():
-            if not treatment_time:
-                #*** Call function to check the line to see if it is
-                #***  a treatment and if so return time in UTC timezone:
-                treatment_time = check_snoop_line(line, UTC)
-
-    #*** Calculate the delta between Iperf start and traffic treatment:
-    if iperf_starttime_datetime_tz and treatment_time:
-        delta = treatment_time - iperf_starttime_datetime_tz
-        print "delta seconds is ", delta.total_seconds()
-        #*** Write result to file:
-
-        # TBD
-
-
-    else:
-        #*** Uh-oh, something must have gone wrong... Lets write
-        #*** something to file for triage later:
-
-        # TBD
-
-        sys.exit("Uh-oh, something must have gone wrong...")
-
+    main()
 
 
