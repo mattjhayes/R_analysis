@@ -187,8 +187,14 @@ for (i in 1:length(files_list_p2dpae)) {
 }
 
 #======================== Combined DF =========================
-#df_combined = rbind(df_tt, df_p2dpae)
 df_combined <- merge(df_tt, df_p2dpae,by="Test Number")
+# Fix double-up of columns:
+drops <- c("Test_Type.y","Dir_Path.y")
+df_combined <- df_combined[,!(names(df_combined) %in% drops)]
+colnames(df_combined)[names(df_combined)=="Test_Type.x"] <- "Test_Type"
+colnames(df_combined)[names(df_combined)=="Dir_Path.x"] <- "Dir_Path"
+
+df_combined <- merge(df_combined, df_iperf_pc,by="Test Number")
 # Fix double-up of columns:
 drops <- c("Test_Type.y","Dir_Path.y")
 df_combined <- df_combined[,!(names(df_combined) %in% drops)]
@@ -213,4 +219,15 @@ fx_chart_scatter_1("Time_to_Treatment", "Packets_to_DPAE", "Test_Type", df_combi
 print("Creating chart for Packets to DPAE vs Time to Treat 2")
 q <- qplot(df_combined$"Time_to_Treatment", df_combined$"Packets_to_DPAE", color=df_combined$"Test_Type", main="Packets to DPAE vs Time to Treat", xlab="Time to Treatment (seconds)", ylab="Packets to DPAE (packets)")
 q + labs(color="custom title")
+print (q)
+
+# Bandwidth vs Time to Treatment:
+print("Creating chart for Bandwidth vs Time to Treatment")
+q <- qplot(df_combined$"Time_to_Treatment", df_combined$"Bandwidth", color=df_combined$"Test_Type", main="Bandwidth vs Time to Treatment", xlab="Time to Treatment (seconds)", ylab="Bandwidth (bps)", ylim=c(0, 1000000))
+print (q)
+
+
+# Bandwidth vs Packets to DPAE:
+print("Creating chart for Bandwidth vs Packets to DPAE")
+q <- qplot(df_combined$"Packets_to_DPAE", df_combined$"Bandwidth", color=df_combined$"Test_Type", main="Bandwidth vs Packets_to_DPAE", xlab="Packets to DPAE", ylab="Bandwidth (bps)", ylim=c(0, 1000000))
 print (q)
