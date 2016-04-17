@@ -57,6 +57,7 @@ fx_chart_scatter_1 <- function(data_x, data_y, data_type, data.frame, chart_titl
     p = scatter.lattice
     print (p)
 }
+
 # =============================== BUILD FILE DATA FUNCTION =============
 fx_build_file_data <- function(file_name, files_dir_2) {
     # Use this to build file data prior to importing CSVs
@@ -207,3 +208,9 @@ print (g)
 # Packets to DPAE vs Time to Treat:
 print("Creating chart for Packets to DPAE vs Time to Treat")
 fx_chart_scatter_1("Time_to_Treatment", "Packets_to_DPAE", "Test_Type", df_combined, "Packets to DPAE vs Time to Treat", "Time to Treatment", "Packets to DPAE")
+
+# Packets to DPAE vs Time to Treat 2:
+print("Creating chart for Packets to DPAE vs Time to Treat 2")
+q <- qplot(df_combined$"Time_to_Treatment", df_combined$"Packets_to_DPAE", color=df_combined$"Test_Type", main="Packets to DPAE vs Time to Treat", xlab="Time to Treatment (seconds)", ylab="Packets to DPAE (packets)")
+q + labs(color="custom title")
+print (q)
