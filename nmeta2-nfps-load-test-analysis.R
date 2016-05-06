@@ -321,7 +321,28 @@ df_cxn_keepalive_filt = fx_index_by_load(df_cxn_keepalive, df_filt)
 
 # Cxn-close chart:
 print("Client cxn-close: creating chart")
-fx_chart_scatter_1("Load_Rate", "Object_Retrieval_Time", "Test_Type", df_cxn_close_filt, "Connection Close Retrieval Time vs New Flows Load by Test Type", "Load Rate", "Object Retrieval Time (seconds)")
+fx_chart_scatter_1("Load_Rate", "Object_Retrieval_Time", "Test_Type", df_cxn_close_filt, "Connection Close Retrieval Time vs New Flows Load by Test Type", "Load Rate (NFPS)", "Object Retrieval Time (seconds)")
+
+# Bandwidth vs Time to Treatment:
+print("Client cxn-close: creating chart 2")
+q <- qplot(df_cxn_close_filt$"Load_Rate", df_cxn_close_filt$"Object_Retrieval_Time", color=df_cxn_close_filt$"Test_Type", main="Connection Close Retrieval Time vs New Flows Load by Test Type", xlab="Load Rate (NFPS)", ylab="Object Retrieval Time (seconds)") + coord_trans(y = "log") 
+print (q)
+
+# Bandwidth vs Time to Treatment:
+print("Client cxn-close: creating chart 3")
+q <- qplot(df_cxn_close_filt$"Load_Rate", df_cxn_close_filt$"Object_Retrieval_Time", color=df_cxn_close_filt$"Test_Type", main="Connection Close Retrieval Time vs New Flows Load by Test Type", xlab="Load Rate (NFPS)", ylab="Object Retrieval Time (seconds)") + scale_y_log10(limits=c(0.001, 10), breaks=c(0.01, 0.1, 1, 10))
+print (q)
+
+# Bandwidth vs Time to Treatment:
+print("Client cxn-close: creating chart 4")
+q <- qplot(df_cxn_close_filt$"Load_Rate", df_cxn_close_filt$"Object_Retrieval_Time", color=df_cxn_close_filt$"Test_Type", main="Connection Close Retrieval Time vs New Flows Load by Test Type", xlab="Load Rate (NFPS)", ylab="Object Retrieval Time (seconds)") + scale_x_continuous(limits=c(0, 1000), breaks=c(0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000)) + scale_y_log10(limits=c(0.001, 10), breaks=c(0.001, 0.01, 0.1, 1, 10))
+print (q)
+
+# Bandwidth vs Time to Treatment:
+print("Client cxn-close: creating chart 5")
+library(scales)
+q <- qplot(df_cxn_close_filt$"Load_Rate", df_cxn_close_filt$"Object_Retrieval_Time", color=df_cxn_close_filt$"Test_Type", main="Connection Close Retrieval Time vs New Flows Load by Test Type", xlab="Load Rate (NFPS)", ylab="Object Retrieval Time (seconds)") + scale_x_continuous(limits=c(0, 1000), breaks=c(0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000)) + scale_y_log10(limits=c(0.001, 10), breaks=c(0.001, 0.01, 0.1, 1, 10), labels = comma)
+print (q)
 
 # Cxn-keepalive chart:
 print("Client cxn-keepalive: creating chart")
