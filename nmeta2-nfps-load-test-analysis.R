@@ -8,7 +8,7 @@
 
 # Imports:
 libs <- c('ggplot2', 'latticeExtra', 'gridExtra', 'MASS', 
-          'colorspace', 'plyr', 'Hmisc', 'scales', 'zoo', 'scales'))
+          'colorspace', 'plyr', 'Hmisc', 'scales', 'zoo', 'scales')
 lapply(libs, require, character.only = T)
 
 # Base directory where results data is stored:
@@ -353,6 +353,11 @@ fx_chart_scatter_1("Load_Rate", "Controller_Swap_Out", "Test_Type", df_ct_mosp_f
 # Controller Ethernet Packets In:
 print("Controller mosp: creating Packets In chart")
 fx_chart_scatter_1("Load_Rate", "Controller_Pkt_In", "Test_Type", df_ct_mosp_filt, "Controller Ethernet Packets In vs New Flows Load by Test Type", "Load Rate", "Packets Received per Interval")
+
+# Controller Ethernet Packets In:
+print("Creating Controller Ethernet Packets In 2 chart")
+q <- qplot(df_ct_mosp_filt$"Load_Rate", df_ct_mosp_filt$"Controller_Pkt_In", color=df_ct_mosp_filt$"Test_Type", main="Controller Ethernet Packets In vs New Flows Load by Test Type", xlab="NFPS Load", ylab="Packets Received per Interval (log10 scale)") + scale_y_log10(limits=c(1, 1000), breaks=c(1, 3, 10, 33, 100, 333, 1000),labels = comma) + theme(legend.title=element_blank()) + geom_point(aes(shape=df_ct_mosp_filt$"Test_Type"), size = 3)
+print (q)
 
 # Switch CPU:
 print("Switch mosp: creating CPU chart")

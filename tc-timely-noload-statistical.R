@@ -6,7 +6,7 @@
 
 # Imports:
 libs <- c('ggplot2', 'latticeExtra', 'gridExtra', 'MASS', 
-          'colorspace', 'plyr', 'Hmisc', 'scales', 'zoo')
+          'colorspace', 'plyr', 'Hmisc', 'scales', 'zoo', 'scales')
 lapply(libs, require, character.only = T)
 
 # Base directory where results data is stored:
@@ -223,11 +223,11 @@ print (q)
 
 # Bandwidth vs Time to Treatment:
 print("Creating chart for Bandwidth vs Time to Treatment")
-q <- qplot(df_combined$"Time_to_Treatment", df_combined$"Bandwidth", color=df_combined$"Test_Type", main="Bandwidth vs Time to Treatment", xlab="Time to Treatment (seconds)", ylab="Bandwidth (bps)", ylim=c(0, 1000000))
+q <- qplot(df_combined$"Time_to_Treatment", df_combined$"Bandwidth", color=df_combined$"Test_Type", main="Bandwidth vs Time to Treatment", xlab="Time to Treatment (seconds)", ylab="Bandwidth (bps)")
 print (q)
-
 
 # Bandwidth vs Packets to DPAE:
 print("Creating chart for Bandwidth vs Packets to DPAE")
-q <- qplot(df_combined$"Packets_to_DPAE", df_combined$"Bandwidth", color=df_combined$"Test_Type", main="Bandwidth vs Packets_to_DPAE", xlab="Packets to DPAE", ylab="Bandwidth (bps)", ylim=c(0, 1000000))
+q <- qplot(df_combined$"Packets_to_DPAE", df_combined$"Bandwidth", color=df_combined$"Test_Type", main="Nmeta2 Statistical Classifier - Iperf Average Bandwidth vs TC Packets to DPAE by Mode", xlab="Packets to DPAE (log10 scale)", ylab="Bandwidth (bps -  log10 scale)") + scale_x_log10(limits=c(1, 400), breaks=c(0.1, 1, 3, 10, 33, 100, 333), labels = comma) + scale_y_log10(limits=c(50000, 1000000), breaks=c(100000, 333333, 1000000),labels = comma) + geom_point(aes(shape=df_combined$"Test_Type"), size = 3) + theme(legend.title=element_blank())
 print (q)
+

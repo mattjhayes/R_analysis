@@ -25,6 +25,9 @@ Example:
 ./tc_timely_data_pre_processing.py ~/results/timeliness/statistical \
      /20160414211230/nmeta2-constrained-bw-iperf/20160414211648
 
+This script is called by the Ansible YAML template, so does not need to
+be run manually.
+
 """
 #*** For writing to file:
 from __future__ import print_function
