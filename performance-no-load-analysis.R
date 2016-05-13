@@ -15,7 +15,8 @@ base_dir <- "~/results/performance-no-load"
 # Ask for the sub-directory that the results are in:
 #test_dir_1 <- readline("What is name of directory?")
 
-test_dir_1 <- "20160512211845"
+# TEMP:
+test_dir_1 <- "20160513203601"
 
 base_dir_2 <- paste(base_dir, test_dir_1, sep = '/')
 
@@ -187,26 +188,10 @@ q <- qplot(df_cxn_close$"Test_Type", df_cxn_close$"Object_Retrieval_Time", main=
 q + labs(color="custom title")
 print (q)
 
-#print("Creating chart 2 for Object Retrieval Time by Test Type")
-#q <- qplot(df_cxn_close_stats$"Test_Type", df_cxn_close_stats$"Object_Retrieval_Time", main="Object Retrieval Time by Test #Type", xlab="Test Type", ylab="Object_Retrieval_Time (seconds)") + 
-#    geom_bar(position=position_dodge(), stat="identity") +
-#    geom_errorbar(aes(ymin=df_cxn_close_stats$"Object_Retrieval_Time"-df_cxn_close_stats$se, ymax=df_cxn_close_stats$"Object_Retrieval_Time"+df_cxn_close_stats$se),
-#                  width=.2,                    # Width of the error bars
-#                  position=position_dodge(.9))
-#q + labs(color="custom title")
-#print (q)
-
-
-q <- ggplot(df_cxn_close_stats, aes(x=Test_Type, y=mean)) + 
-    geom_bar(position=position_dodge(), stat="identity") +
-    geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                  width=.2,                    # Width of the error bars
-                  position=position_dodge(.9))
+print("Creating bar chart for hort cxn close object retrieval time")
+q <- ggplot(data=df_cxn_close_stats, aes(x=Test_Type, y=mean, fill=Test_Type)) + geom_bar(stat="identity") + ylab("HTTP Object Retrieval Time (s)") + geom_bar(position=position_dodge(), stat="identity") + geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.2, position=position_dodge(.9))
 print (q)
 
-q <- ggplot(df_hping3_stats, aes(x=Test_Type, y=mean)) + 
-    geom_bar(position=position_dodge(), stat="identity") +
-    geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                  width=.2,                    # Width of the error bars
-                  position=position_dodge(.9))
+print("Creating bar chart for TCP RTT (as measured by hping3)")
+q <- ggplot(data=df_hping3_stats, aes(x=Test_Type, y=mean, fill=Test_Type)) + ylab("TCP RTT (s)") + geom_bar(position=position_dodge(), stat="identity") + geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.2, position=position_dodge(.9))
 print (q)
