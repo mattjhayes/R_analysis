@@ -13,7 +13,9 @@ lapply(libs, require, character.only = T)
 base_dir <- "~/results/performance-no-load"
 
 # Ask for the sub-directory that the results are in:
-test_dir_1 <- readline("What is name of directory?")
+#test_dir_1 <- readline("What is name of directory?")
+
+test_dir_1 <- "20160512211845"
 
 base_dir_2 <- paste(base_dir, test_dir_1, sep = '/')
 
@@ -75,11 +77,12 @@ fx_csv2df <- function(files_list, files, col_select, col_names) {
         cat(sprintf("fx_csv2df: test_type=\"%s\" dir_path=\"%s\"\n", test_type, dir_path))
         
         x <- files_list[[i]]$time
+
         df_tmp <- data.frame(x)
         colnames(df_tmp)[1] = "Time"
         # Add in the 'y' column(s):
         j <- 2
-        
+
         for (col_y in col_select) {
 
             # TEMP PRINT:
@@ -98,6 +101,38 @@ fx_csv2df <- function(files_list, files, col_select, col_names) {
     }
     # Set Time column to POSIXct data type:
     df_result$Time <- as.POSIXct(df_result$Time)
+    return(df_result)
+}
+
+# ============================= CSVs to DATA FRAME =====================
+fx_column2df <- function(files_list, files, col_name) {
+    # Passed a list of CSV (single column, no header) file data frames,
+    # files information, specific columns of interest and their final
+    # names and return a single data frame that incorporates all this
+    # information
+    df_result <- data.frame()
+    # iterate through files and add to result data frame
+    for (i in 1:length(files_list)) {
+        test_type <- unname(files$test_types[i])
+        dir_path <- unname(files$dir_path[i])
+
+        # TEMP PRINT:
+        cat(sprintf("fx_csv2df: test_type=\"%s\" dir_path=\"%s\"\n", test_type, dir_path))
+        
+        x <- files_list[[i]][1]
+
+        # TEMP PRINT:
+        cat(sprintf("x=\"%s\" \"\n", x))
+
+        df_tmp <- data.frame(x)
+        colnames(df_tmp)[1] = col_name
+        #*** Add filled Test_Type column:
+        df_tmp$Test_Type <- as.factor(rep(test_type, length(x)))
+        #*** Add filled Dir_Path column:
+        df_tmp$Dir_Path <- as.factor(rep(dir_path, length(x)))
+        # Accumulate the additional data rows:
+        df_result = rbind(df_result, df_tmp)
+    }
     return(df_result)
 }
 
@@ -124,6 +159,26 @@ df_cxn_close_stats <- ddply(df_cxn_close, c("Test_Type"), summarise,
                se   = sd / sqrt(N)
 )
 
+# ===================== hping3 client analysis:
+# Call function (see further up) to build file data:
+files <- fx_build_file_data("post_process_hping3.csv", files_dir_2)
+
+print ("Reading hping3 client result CSV files into a list")
+# Read the result CSV files into a list:
+files_list <- lapply(files$files, read.csv)
+
+print ("Generating hping3 client data frame")
+col_name <- c("tcp_rtt")
+df_hping3 <- fx_column2df(files_list, files, col_name)
+
+#*** Create a statistical analysis for hping3 client result data:
+df_hping3_stats <- ddply(df_hping3, c("Test_Type"), summarise,
+               N    = length(tcp_rtt),
+               mean = mean(tcp_rtt),
+               sd   = sd(tcp_rtt),
+               se   = sd / sqrt(N)
+)
+
 # ============================= CHARTING ===============================
 # Plot results on a chart:
 # Packets to DPAE vs Time to Treat 2:
@@ -143,6 +198,13 @@ print (q)
 
 
 q <- ggplot(df_cxn_close_stats, aes(x=Test_Type, y=mean)) + 
+    geom_bar(position=position_dodge(), stat="identity") +
+    geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                  width=.2,                    # Width of the error bars
+                  position=position_dodge(.9))
+print (q)
+
+q <- ggplot(df_hping3_stats, aes(x=Test_Type, y=mean)) + 
     geom_bar(position=position_dodge(), stat="identity") +
     geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                   width=.2,                    # Width of the error bars
