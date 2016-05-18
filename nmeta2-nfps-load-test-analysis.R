@@ -323,20 +323,9 @@ df_cxn_keepalive_filt = fx_index_by_load(df_cxn_keepalive, df_filt)
 print("Client cxn-close: creating chart")
 fx_chart_scatter_1("Load_Rate", "Object_Retrieval_Time", "Test_Type", df_cxn_close_filt, "Connection Close Retrieval Time vs New Flows Load by Test Type", "Load Rate (NFPS)", "Object Retrieval Time (seconds)")
 
-# Cxn-close chart 2:
-print("Client cxn-close: creating chart 2")
-q <- qplot(df_cxn_close_filt$"Load_Rate", df_cxn_close_filt$"Object_Retrieval_Time", color=df_cxn_close_filt$"Test_Type", main="Connection Close Retrieval Time vs New Flows Load by Test Type", xlab="Load Rate (NFPS)", ylab="Object Retrieval Time (seconds)") + scale_x_continuous(limits=c(0, 1000), breaks=c(0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000)) + scale_y_log10(limits=c(0.001, 10), breaks=c(0.001, 0.01, 0.1, 1, 10), labels = comma)
-print (q)
-
 # Cxn-keepalive chart:
 print("Client cxn-keepalive: creating chart")
 fx_chart_scatter_1("Load_Rate", "Object_Retrieval_Time", "Test_Type", df_cxn_keepalive_filt, "Connection Keepalive Retrieval Time vs New Flows Load by Test Type", "Load Rate", "Object Retrieval Time (seconds)")
-
-# Cxn-keepalive chart 2:
-print("Client cxn-keepalive: creating chart 2")
-q <- qplot(df_cxn_keepalive_filt$"Load_Rate", df_cxn_keepalive_filt$"Object_Retrieval_Time", color=df_cxn_keepalive_filt$"Test_Type", main="Connection Keepalive Retrieval Time vs New Flows Load by Test Type", xlab="Load Rate (NFPS)", ylab="Object Retrieval Time (seconds)") + scale_x_continuous(limits=c(0, 1000), breaks=c(0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000)) + scale_y_log10(limits=c(0.001, 10), breaks=c(0.001, 0.01, 0.1, 1, 10), labels = comma)
-print (q)
-
 
 # Controller CPU:
 print("Controller mosp: creating CPU chart")
@@ -353,11 +342,6 @@ fx_chart_scatter_1("Load_Rate", "Controller_Swap_Out", "Test_Type", df_ct_mosp_f
 # Controller Ethernet Packets In:
 print("Controller mosp: creating Packets In chart")
 fx_chart_scatter_1("Load_Rate", "Controller_Pkt_In", "Test_Type", df_ct_mosp_filt, "Controller Ethernet Packets In vs New Flows Load by Test Type", "Load Rate", "Packets Received per Interval")
-
-# Controller Ethernet Packets In:
-print("Creating Controller Ethernet Packets In 2 chart")
-q <- qplot(df_ct_mosp_filt$"Load_Rate", df_ct_mosp_filt$"Controller_Pkt_In", color=df_ct_mosp_filt$"Test_Type", main="Controller Ethernet Packets In vs New Flows Load by Test Type", xlab="NFPS Load", ylab="Packets Received per Interval (log10 scale)") + scale_y_log10(limits=c(1, 1000), breaks=c(1, 3, 10, 33, 100, 333, 1000),labels = comma) + theme(legend.title=element_blank()) + geom_point(aes(shape=df_ct_mosp_filt$"Test_Type"), size = 3)
-print (q)
 
 # Switch CPU:
 print("Switch mosp: creating CPU chart")
@@ -391,4 +375,44 @@ fx_chart_scatter_1("Load_Rate", "DPAE_Pkt_In", "Test_Type", df_dp_mosp_filt, "DP
 print("DPAE mosp: creating Packets Out chart")
 fx_chart_scatter_1("Load_Rate", "DPAE_Pkt_Out", "Test_Type", df_dp_mosp_filt, "DPAE Ethernet Packets Out vs New Flows Load by Test Type", "Load Rate", "Packets Sent per Interval")
 
+#==================== NEW CHARTS:
 
+#*** This helps get font size bigger:
+theme_set(theme_gray(base_size = 18))
+
+# Cxn-close chart 2:
+print("Client cxn-close: creating chart 2")
+q <- qplot(df_cxn_close_filt$"Load_Rate", df_cxn_close_filt$"Object_Retrieval_Time", color=df_cxn_close_filt$"Test_Type", xlab="Load Rate (NFPS)", ylab="Connection Close HTTP Object Retrieval Time (s, log10 scale)") + scale_x_continuous(limits=c(0, 1000), breaks=c(0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000)) + scale_y_log10(limits=c(0.001, 10), breaks=c(0.001, 0.01, 0.1, 1, 10), labels = comma) + stat_smooth(method = "loess", formula = y ~ x, size = 1) + theme(legend.title=element_blank())
+print (q)
+
+# Cxn-keepalive chart 2:
+print("Client cxn-keepalive: creating chart 2")
+q <- qplot(df_cxn_keepalive_filt$"Load_Rate", df_cxn_keepalive_filt$"Object_Retrieval_Time", color=df_cxn_keepalive_filt$"Test_Type", xlab="Load Rate (NFPS)", ylab="Connection Keepalive HTTP Object Retrieval Time (s, log10 scale)") + scale_x_continuous(limits=c(0, 1000), breaks=c(0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000)) + scale_y_log10(limits=c(0.001, 10), breaks=c(0.001, 0.01, 0.1, 1, 10), labels = comma) + stat_smooth(method = "loess", formula = y ~ x, size = 1) + theme(legend.title=element_blank())
+print (q)
+
+
+#===================== CHARTS FOR NMETA (classic) Analysis
+# Create an nmeta cxn-close (Drop nmeta2 factors from DF):
+factor_to_remove <- which(df_cxn_close_filt$Test_Type=="nmeta2-active")
+df_cxn_close_filt2 <- df_cxn_close_filt[-factor_to_remove,]
+factor_to_remove <- which(df_cxn_close_filt2$Test_Type=="nmeta2-passive")
+df_cxn_close_filt2 <- df_cxn_close_filt2[-factor_to_remove,]
+df_cxn_close_filt2$Test_Type <- factor(df_cxn_close_filt2$Test_Type)
+q <- ggplot(data=df_cxn_close_filt2, aes(x=Load_Rate, y=Object_Retrieval_Time, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Connection Close HTTP Object Retrieval Time (s, log10 scale)") + theme(legend.title=element_blank()) + scale_x_continuous(limits=c(10, 200)) + geom_point(aes(x=Load_Rate, y=Object_Retrieval_Time, color=Test_Type)) + stat_smooth(method = "loess") + scale_y_log10(limits=c(0.001, 10), breaks=c(0.001, 0.01, 0.1, 1, 10), labels = comma)
+print (q)
+
+# Convert type on df column to num so that smooth line works (won't work for integer)
+df_ct_mosp_filt <- transform(df_ct_mosp_filt, Controller_Pkt_In = as.numeric(Controller_Pkt_In))
+
+# Create an nmeta controller pkt in (Drop nmeta2 factors from DF):
+factor_to_remove <- which(df_ct_mosp_filt$Test_Type=="nmeta2-active")
+df_ct_mosp_filt2 <- df_ct_mosp_filt[-factor_to_remove,]
+factor_to_remove <- which(df_ct_mosp_filt2$Test_Type=="nmeta2-passive")
+df_ct_mosp_filt2 <- df_ct_mosp_filt2[-factor_to_remove,]
+df_ct_mosp_filt2$Test_Type <- factor(df_ct_mosp_filt2$Test_Type)
+q <- ggplot(data=df_ct_mosp_filt2, aes(x=Load_Rate, y=Controller_Pkt_In, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Controller Packets Received per Interval (pkts)") + theme(legend.title=element_blank()) + scale_x_continuous(limits=c(10, 200)) + geom_point(aes(x=Load_Rate, y=Controller_Pkt_In, color=Test_Type)) + stat_smooth(method = "loess")
+print (q)
+
+# Create an nmeta controller cpu chart (Drop nmeta2 factors from DF):
+q <- ggplot(data=df_ct_mosp_filt2, aes(x=Load_Rate, y=Controller_CPU, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Controller CPU (%)") + theme(legend.title=element_blank()) + scale_x_continuous(limits=c(10, 200)) + geom_point(aes(x=Load_Rate, y=Controller_CPU, color=Test_Type)) + stat_smooth(method = "loess")
+print (q)
