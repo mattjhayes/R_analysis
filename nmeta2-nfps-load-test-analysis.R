@@ -242,7 +242,7 @@ print ("Reading Controller mosp result CSV files into a list")
 files_list <- lapply(files$files, read.csv)
 
 print ("Generating Controller mosp data frame")
-col_select <- c("ct1.cpu.0.", "ct1.swap.in", "ct1.swap.out", "ct1.pkts.in.eth1.", "ct1.pkts.out.eth1.")
+col_select <- c("ct1.cpu.0.", "ct1.swap.in", "ct1.swap.out", "ct1.pkts.in.eth2.", "ct1.pkts.out.eth2.")
 col_names <- c("Controller_CPU", "Controller_Swap_In", "Controller_Swap_Out", "Controller_Pkt_In", "Controller_Pkt_Out")
 df_ct_mosp <- fx_csv2df(files_list, files, col_select, col_names)
 
