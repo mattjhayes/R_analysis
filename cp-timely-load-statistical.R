@@ -62,19 +62,58 @@ fx_build_file_data <- function(file_name, files_dir_2) {
 
 # ===================== MAIN PROGRAM ===================================
 
+#*** Timeliness of MAC learning updates applied to data plane
+#*** The relies on Open vSwitch snooping, and does not work for nmeta
+#*** as it does not apply FEs to data plane when MACs are learnt.
+
 # Call function (see further up) to build file data:
-files_cp <- fx_build_file_data("post_process_control_plane_time_delta.txt", files_dir_2)
+files_cp_snoop <- fx_build_file_data("post_process_control_plane_snoop_time_delta.txt", files_dir_2)
 
 print ("Reading result CSV files into a list")
 # Read the result CSV files into a list:
-files_list_cp <- lapply(files_cp$files, read.csv, header=FALSE)
+files_list_cp_snoop <- lapply(files_cp_snoop$files, read.csv, header=FALSE)
 
-df_cp <- data.frame()
-for (i in 1:length(files_list_cp)) {
+df_cp_snoop <- data.frame()
+for (i in 1:length(files_list_cp_snoop)) {
     # Read data frame from list
-    df_temp <- files_list_cp[[i]]
-    df_temp$TestType <- unname(files_cp$dir_path[i])
-    names(df_temp) <- c("TestType", "LoadRate", "CPMAC", "DirPath")
+    df_temp <- files_list_cp_snoop[[i]]
+    df_temp$TestType <- unname(files_cp_snoop$dir_path[i])
+    names(df_temp) <- c("Test_Type", "Load_Rate", "DP_Apply_Timeliness", "DirPath")
     print ("Doing rbind to accumulate row")
-    df_cp = rbind(df_cp, df_temp)
+    df_cp_snoop = rbind(df_cp_snoop, df_temp)
 }
+
+#-----------------------------------------------------------------------
+#*** Timeliness of packet flooding ceasing (implying that CP has learnt
+#*** MAC...
+
+# Call function (see further up) to build file data:
+files_cp_traffic <- fx_build_file_data("post_process_control_plane_traffic_time_delta.txt", files_dir_2)
+
+print ("Reading result CSV files into a list")
+# Read the result CSV files into a list:
+files_list_cp_traffic <- lapply(files_cp_traffic$files, read.csv, header=FALSE)
+
+df_cp_traffic <- data.frame()
+for (i in 1:length(files_list_cp_traffic)) {
+    # Read data frame from list
+    df_temp <- files_list_cp_traffic[[i]]
+    df_temp$TestType <- unname(files_cp_traffic$dir_path[i])
+    names(df_temp) <- c("Test_Type", "Load_Rate", "No_Flood_Timeliness", "Flooded_Pkts_to_Crafted_MAC", "DirPath")
+    print ("Doing rbind to accumulate row")
+    df_cp_traffic = rbind(df_cp_traffic, df_temp)
+}
+
+# ======================== CHARTING ====================================
+
+# Data Plane update delay for Learnt MAC by Test Type
+q <- ggplot(data=df_cp_snoop, aes(x=Load_Rate, y=DP_Apply_Timeliness, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("MAC Learning Treatment Delay (s)") + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=DP_Apply_Timeliness, color=Test_Type)) + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
+print (q)
+
+# Learning delay to Not Flood Crafted MAC by Test Type
+q <- ggplot(data=df_cp_traffic, aes(x=Load_Rate, y=No_Flood_Timeliness, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("MAC Learning No Flooding Delay (s)") + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=No_Flood_Timeliness, color=Test_Type)) + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
+print (q)
+
+# Packets Flooded to Crafted MAC by Test Type
+q <- ggplot(data=df_cp_traffic, aes(x=Load_Rate, y=Flooded_Pkts_to_Crafted_MAC, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Number of Packets Flooded to Crafted MAC (packets)") + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=Flooded_Pkts_to_Crafted_MAC, color=Test_Type)) + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
+print (q)
