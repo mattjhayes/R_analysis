@@ -6,7 +6,7 @@
 
 # Imports:
 libs <- c('ggplot2', 'latticeExtra', 'gridExtra', 'MASS', 
-          'colorspace', 'plyr', 'Hmisc', 'scales', 'zoo', 'scales')
+          'colorspace', 'plyr', 'Hmisc', 'scales', 'zoo', 'scales', 'cowplot')
 lapply(libs, require, character.only = T)
 
 # Base directory where results data is stored:
@@ -220,12 +220,42 @@ q <- ggplot(data=df_cp_snoop, aes(x=Load_Rate, y=DP_Apply_Timeliness, fill=Test_
 print (q)
 
 # Learning delay to Not Flood Crafted MAC by Test Type
-q <- ggplot(data=df_cp_traffic, aes(x=Load_Rate, y=No_Flood_Timeliness, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("MAC Learning No Flooding Delay (s)") + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=No_Flood_Timeliness, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
-print (q)
+q2 <- ggplot(data=df_cp_traffic, aes(x=Load_Rate, y=No_Flood_Timeliness, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("MAC Learning No Flooding Delay (s - log10 scale)") + scale_y_log10(limits=c(0.03, 40), labels = comma) + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=No_Flood_Timeliness, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
+print (q2)
 
 # Packets Flooded to Crafted MAC by Test Type
-q <- ggplot(data=df_cp_traffic, aes(x=Load_Rate, y=Flooded_Pkts_to_Crafted_MAC, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Number of Packets Flooded to Crafted MAC (packets)") + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=Flooded_Pkts_to_Crafted_MAC, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
-print (q)
+q3 <- ggplot(data=df_cp_traffic, aes(x=Load_Rate, y=Flooded_Pkts_to_Crafted_MAC, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Number of Packets Flooded (packets - log10 scale)")  + scale_y_log10(limits=c(0.5, 450), labels = comma) + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=Flooded_Pkts_to_Crafted_MAC, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
+print (q3)
+
+#-------------------- 2-Up chart for publishing ------------------------
+
+#*** Function to hold legend so that it can be shared and placed at will:
+get_legend<-function(myggplot){
+  tmp <- ggplot_gtable(ggplot_build(myggplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)
+}
+#*** Add simple titles to differentiate the 3 charts:
+q2 <- q2 + ggtitle("MAC Learning Delay")
+q3 <- q3 + ggtitle("Packets Flooded")
+#*** Change legend to top so that it displays horizontally:
+q2 <- q2 + theme(legend.position = "top")
+#*** Copy legend to a variable:
+legend <- get_legend(q2)
+#*** Blank plot for cells that don't need a chart in them:
+blankPlot <- ggplot()+geom_blank(aes(1,1)) + 
+  cowplot::theme_nothing()
+#*** Remove legends:
+q2 <- q2 + theme(legend.position="none")
+q3 <- q3 + theme(legend.position="none")
+#*** Do multiple plots on one page with shared legend:
+grid.arrange(legend, blankPlot,
+            q2, q3,
+             ncol=2, nrow = 2, 
+             widths = c(2.7, 2.7), heights = c(0.2, 2.5))
+
+#-------------------- Telemetry for Sanity Checking --------------------
 
 # Packets to Controller
 q <- ggplot(data=df_ct_pkts, aes(x=Load_Rate, y=Controller_Packets_In, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Packets to Controller over Test Period for Telemetry (packets)") + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=Controller_Packets_In, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
