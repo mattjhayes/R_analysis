@@ -215,6 +215,26 @@ df_sw_mosp <- fx_csv2df(files_list, files, col_select, col_names)
 
 # ======================== CHARTING ====================================
 
+#-------------------- Telemetry for Sanity Checking --------------------
+
+# Packets to Controller
+q <- ggplot(data=df_ct_pkts, aes(x=Load_Rate, y=Controller_Packets_In, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Packets to Controller over Test Period for Telemetry (packets)") + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=Controller_Packets_In, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
+print (q)
+
+# Packets from Controller
+q <- ggplot(data=df_ct_pkts, aes(x=Load_Rate, y=Controller_Packets_Out, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Packets from Controller over Test Period for Telemetry (packets)") + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=Controller_Packets_Out, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
+print (q)
+
+# Packets to Server
+q <- ggplot(data=df_sv_pkts, aes(x=Load_Rate, y=Server_Packets_In, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Packets to Server over Test Period for Telemetry (packets)") + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=Server_Packets_In, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
+print (q)
+
+# Packets from Server
+q <- ggplot(data=df_sv_pkts, aes(x=Load_Rate, y=Server_Packets_Out, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Packets from Server over Test Period for Telemetry (packets)") + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=Server_Packets_Out, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
+print (q)
+
+#---------------------------------- Results ----------------------------
+
 # Data Plane update delay for Learnt MAC by Test Type
 q <- ggplot(data=df_cp_snoop, aes(x=Load_Rate, y=DP_Apply_Timeliness, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("MAC Learning Treatment Delay (s)") + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=DP_Apply_Timeliness, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
 print (q)
@@ -224,7 +244,7 @@ q2 <- ggplot(data=df_cp_traffic, aes(x=Load_Rate, y=No_Flood_Timeliness, fill=Te
 print (q2)
 
 # Packets Flooded to Crafted MAC by Test Type
-q3 <- ggplot(data=df_cp_traffic, aes(x=Load_Rate, y=Flooded_Pkts_to_Crafted_MAC, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Number of Packets Flooded (packets - log10 scale)")  + scale_y_log10(limits=c(0.5, 450), labels = comma) + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=Flooded_Pkts_to_Crafted_MAC, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
+q3 <- ggplot(data=df_cp_traffic, aes(x=Load_Rate, y=Flooded_Pkts_to_Crafted_MAC, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Number of Packets Flooded (packets - log10 scale)")  + scale_y_log10(limits=c(0.5, 700), breaks=c(1, 3, 10, 33, 100, 333), labels = comma) + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=Flooded_Pkts_to_Crafted_MAC, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
 print (q3)
 
 #-------------------- 2-Up chart for publishing ------------------------
@@ -243,32 +263,12 @@ q3 <- q3 + ggtitle("Packets Flooded")
 q2 <- q2 + theme(legend.position = "top")
 #*** Copy legend to a variable:
 legend <- get_legend(q2)
-#*** Blank plot for cells that don't need a chart in them:
-blankPlot <- ggplot()+geom_blank(aes(1,1)) + 
-  cowplot::theme_nothing()
 #*** Remove legends:
 q2 <- q2 + theme(legend.position="none")
 q3 <- q3 + theme(legend.position="none")
 #*** Do multiple plots on one page with shared legend:
-grid.arrange(legend, blankPlot,
-            q2, q3,
-             ncol=2, nrow = 2, 
-             widths = c(2.7, 2.7), heights = c(0.2, 2.5))
+grid.arrange(legend, q2, q3,
+            widths = c(2.7, 2.7), heights = c(0.2, 2.5),
+            layout_matrix = rbind(c(1,1), c(2,3)))
 
-#-------------------- Telemetry for Sanity Checking --------------------
 
-# Packets to Controller
-q <- ggplot(data=df_ct_pkts, aes(x=Load_Rate, y=Controller_Packets_In, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Packets to Controller over Test Period for Telemetry (packets)") + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=Controller_Packets_In, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
-print (q)
-
-# Packets from Controller
-q <- ggplot(data=df_ct_pkts, aes(x=Load_Rate, y=Controller_Packets_Out, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Packets from Controller over Test Period for Telemetry (packets)") + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=Controller_Packets_Out, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
-print (q)
-
-# Packets to Server
-q <- ggplot(data=df_sv_pkts, aes(x=Load_Rate, y=Server_Packets_In, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Packets to Server over Test Period for Telemetry (packets)") + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=Server_Packets_In, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
-print (q)
-
-# Packets from Server
-q <- ggplot(data=df_sv_pkts, aes(x=Load_Rate, y=Server_Packets_Out, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Packets from Server over Test Period for Telemetry (packets)") + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=Server_Packets_Out, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
-print (q)
