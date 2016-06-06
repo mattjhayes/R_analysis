@@ -1,6 +1,6 @@
 # Analyse results from a new flow per second (NFPS) load test
 
-# Version 0.2.0
+# Version 0.2.1
 
 # Run in rstudio with:
 
@@ -450,5 +450,71 @@ grid.arrange(legend, blankPlot, blankPlot,
              ncol=3, nrow = 2, 
              widths = c(2.3, 2.3, 2.3), heights = c(0.2, 2.5))
 
+#---------------------- COMBINED CPU CHARTS - nmeta --------------------
+# Do chart each for nmeta, nmeta2-active and nmeta2-passive showing
+# CPU of different components so can see how workload has been moved
+# to make it more scalable
 
+#*** Create nmeta data frame with other factors removed:
+selected<-c("nmeta")
+df_nmeta_ct_cpu <- df_ct_mosp_filt[df_ct_mosp_filt$Test_Type %in% selected,]
+df_nmeta_ct_cpu$Test_Type <- factor(df_nmeta_ct_cpu$Test_Type)
+#*** Remove superfluous columns:
+keeps <- c("Time", "Controller_CPU", "Load_Rate")
+df_nmeta_ct_cpu <- df_nmeta_ct_cpu[keeps]
+#*** Now a switch CPU data frame:
+df_nmeta_sw_cpu <- df_sw_mosp_filt[df_sw_mosp_filt$Test_Type %in% selected,]
+df_nmeta_sw_cpu$Test_Type <- factor(df_nmeta_sw_cpu$Test_Type)
+#*** Remove superfluous columns:
+keeps <- c("Time", "Switch_CPU", "Load_Rate")
+df_nmeta_sw_cpu <- df_nmeta_sw_cpu[keeps]
+
+#*** Chart the result:
+q_cpu_nmeta <- ggplot() + xlab("NFPS Load") + ylab("CPU (%)") + theme(legend.title=element_blank()) + scale_x_continuous(limits=c(10, 500)) + scale_y_continuous(limits=c(0, 100)) + geom_point(data = df_nmeta_ct_cpu, aes(x = Load_Rate, y = Controller_CPU, color = "Controller CPU")) + stat_smooth(method = "loess", data = df_nmeta_ct_cpu, aes(x=Load_Rate, y=Controller_CPU, color = "Controller CPU")) + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
+#*** Add second series to chart (note different data frame):
+q_cpu_nmeta <- q_cpu_nmeta + geom_point(data = df_nmeta_sw_cpu, aes(x=Load_Rate, y=Switch_CPU, color = "Switch CPU")) + stat_smooth(method = "loess", data = df_nmeta_sw_cpu, aes(x=Load_Rate, y=Switch_CPU, color = "Switch CPU")) 
+
+#---------------------- COMBINED CPU CHARTS - nmeta2-active --------------------
+#*** Create nmeta data frame with other factors removed:
+selected<-c("nmeta2-active")
+df_nmeta2a_ct_cpu <- df_ct_mosp_filt[df_ct_mosp_filt$Test_Type %in% selected,]
+df_nmeta2a_ct_cpu$Test_Type <- factor(df_nmeta2a_ct_cpu$Test_Type)
+#*** Remove superfluous columns:
+keeps <- c("Time", "Controller_CPU", "Load_Rate")
+df_nmeta2a_ct_cpu <- df_nmeta2a_ct_cpu[keeps]
+#*** Now a switch CPU data frame:
+df_nmeta2a_sw_cpu <- df_sw_mosp_filt[df_sw_mosp_filt$Test_Type %in% selected,]
+df_nmeta2a_sw_cpu$Test_Type <- factor(df_nmeta2a_sw_cpu$Test_Type)
+#*** Remove superfluous columns:
+keeps <- c("Time", "Switch_CPU", "Load_Rate")
+df_nmeta2a_sw_cpu <- df_nmeta2a_sw_cpu[keeps]
+#*** Now a DPAE CPU data frame:
+df_nmeta2a_dp_cpu <- df_dp_mosp_filt[df_dp_mosp_filt$Test_Type %in% selected,]
+df_nmeta2a_dp_cpu$Test_Type <- factor(df_nmeta2a_dp_cpu$Test_Type)
+#*** Remove superfluous columns:
+keeps <- c("Time", "DPAE_CPU", "Load_Rate")
+df_nmeta2a_dp_cpu <- df_nmeta2a_dp_cpu[keeps]
+
+#*** Chart the CPU result:
+q_cpu_nmeta2a <- ggplot() + xlab("NFPS Load") + ylab("CPU (%)") + theme(legend.title=element_blank()) + scale_x_continuous(limits=c(10, 500)) + scale_y_continuous(limits=c(0, 100)) + geom_point(data = df_nmeta2a_ct_cpu, aes(x = Load_Rate, y = Controller_CPU, color = "Controller CPU")) + stat_smooth(method = "loess", data = df_nmeta2a_ct_cpu, aes(x=Load_Rate, y=Controller_CPU, color = "Controller CPU")) + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
+#*** Add second series to chart for switch CPU (note different data frame):
+q_cpu_nmeta2a <- q_cpu_nmeta2a + geom_point(data = df_nmeta2a_sw_cpu, aes(x=Load_Rate, y=Switch_CPU, color = "Switch CPU")) + stat_smooth(method = "loess", data = df_nmeta2a_sw_cpu, aes(x=Load_Rate, y=Switch_CPU, color = "Switch CPU"))
+#*** Add third series to chart for DPAE CPU (note different data frame):
+q_cpu_nmeta2a <- q_cpu_nmeta2a + geom_point(data = df_nmeta2a_dp_cpu, aes(x=Load_Rate, y=DPAE_CPU, color = "DPAE CPU")) + stat_smooth(method = "loess", data = df_nmeta2a_dp_cpu, aes(x=Load_Rate, y=DPAE_CPU, color = "DPAE CPU"))
+
+#-------------- Print COMBINED CPU CHARTS - nmeta, nmeta2-active --------------------
+#*** Add simple titles to differentiate the 3 charts:
+q_cpu_nmeta <- q_cpu_nmeta + ggtitle("Nmeta Workload")
+q_cpu_nmeta2a <- q_cpu_nmeta2a + ggtitle("Nmeta2-Active Workload")
+#*** Change legend to top so that it displays horizontally:
+q_cpu_nmeta2a <- q_cpu_nmeta2a + theme(legend.position = "top")
+#*** Copy legend to a variable:
+legend <- get_legend(q_cpu_nmeta2a)
+#*** Remove legends:
+q_cpu_nmeta <- q_cpu_nmeta + theme(legend.position="none")
+q_cpu_nmeta2a <- q_cpu_nmeta2a + theme(legend.position="none")
+#*** Do multiple plots on one page with shared legend:
+grid.arrange(legend, q_cpu_nmeta, q_cpu_nmeta2a,
+            widths = c(2.7, 2.7), heights = c(0.2, 2.5),
+            layout_matrix = rbind(c(1,1), c(2,3)))
 
