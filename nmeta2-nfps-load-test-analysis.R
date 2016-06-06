@@ -472,7 +472,7 @@ df_nmeta_sw_cpu <- df_nmeta_sw_cpu[keeps]
 #*** Chart the result:
 q_cpu_nmeta <- ggplot() + xlab("NFPS Load") + ylab("CPU (%)") + theme(legend.title=element_blank()) + scale_x_continuous(limits=c(10, 500)) + scale_y_continuous(limits=c(0, 100)) + geom_point(data = df_nmeta_ct_cpu, aes(x = Load_Rate, y = Controller_CPU, color = "Controller CPU")) + stat_smooth(method = "loess", data = df_nmeta_ct_cpu, aes(x=Load_Rate, y=Controller_CPU, color = "Controller CPU")) + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
 #*** Add second series to chart (note different data frame):
-q_cpu_nmeta <- q_cpu_nmeta + geom_point(data = df_nmeta_sw_cpu, aes(x=Load_Rate, y=Switch_CPU, color = "Switch CPU")) + stat_smooth(method = "loess", data = df_nmeta_sw_cpu, aes(x=Load_Rate, y=Switch_CPU, color = "Switch CPU")) 
+q_cpu_nmeta <- q_cpu_nmeta + geom_point(data = df_nmeta_sw_cpu, aes(x=Load_Rate, y=Switch_CPU, color = "Switch CPU")) + stat_smooth(method = "loess", data = df_nmeta_sw_cpu, aes(x=Load_Rate, y=Switch_CPU, color = "Switch CPU")) + scale_color_manual(values=c("#F8766D", "#00BFC4")) 
 
 #---------------------- COMBINED CPU CHARTS - nmeta2-active --------------------
 #*** Create nmeta data frame with other factors removed:
@@ -500,7 +500,7 @@ q_cpu_nmeta2a <- ggplot() + xlab("NFPS Load") + ylab("CPU (%)") + theme(legend.t
 #*** Add second series to chart for switch CPU (note different data frame):
 q_cpu_nmeta2a <- q_cpu_nmeta2a + geom_point(data = df_nmeta2a_sw_cpu, aes(x=Load_Rate, y=Switch_CPU, color = "Switch CPU")) + stat_smooth(method = "loess", data = df_nmeta2a_sw_cpu, aes(x=Load_Rate, y=Switch_CPU, color = "Switch CPU"))
 #*** Add third series to chart for DPAE CPU (note different data frame):
-q_cpu_nmeta2a <- q_cpu_nmeta2a + geom_point(data = df_nmeta2a_dp_cpu, aes(x=Load_Rate, y=DPAE_CPU, color = "DPAE CPU")) + stat_smooth(method = "loess", data = df_nmeta2a_dp_cpu, aes(x=Load_Rate, y=DPAE_CPU, color = "DPAE CPU"))
+q_cpu_nmeta2a <- q_cpu_nmeta2a + geom_point(data = df_nmeta2a_dp_cpu, aes(x=Load_Rate, y=DPAE_CPU, color = "DPAE CPU")) + stat_smooth(method = "loess", data = df_nmeta2a_dp_cpu, aes(x=Load_Rate, y=DPAE_CPU, color = "DPAE CPU")) + scale_color_manual(values=c("#F8766D", "#00BA38", "#00BFC4"))
 
 #-------------- Print COMBINED CPU CHARTS - nmeta, nmeta2-active --------------------
 #*** Add simple titles to differentiate the 3 charts:
@@ -517,4 +517,3 @@ q_cpu_nmeta2a <- q_cpu_nmeta2a + theme(legend.position="none")
 grid.arrange(legend, q_cpu_nmeta, q_cpu_nmeta2a,
             widths = c(2.7, 2.7), heights = c(0.2, 2.5),
             layout_matrix = rbind(c(1,1), c(2,3)))
-
