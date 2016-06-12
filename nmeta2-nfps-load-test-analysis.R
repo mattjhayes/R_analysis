@@ -380,14 +380,24 @@ fx_chart_scatter_1("Load_Rate", "DPAE_Pkt_Out", "Test_Type", df_dp_mosp_filt, "D
 #*** This helps get font size bigger:
 theme_set(theme_gray(base_size = 18))
 
-# Cxn-close chart 2:
-print("Client cxn-close: creating chart 2")
+# Cxn-close chart:
+print("Client cxn-close: creating chart")
 q <- qplot(df_cxn_close_filt$"Load_Rate", df_cxn_close_filt$"Object_Retrieval_Time", color=df_cxn_close_filt$"Test_Type", xlab="Load Rate (NFPS)", ylab="Connection Close HTTP Object Retrieval Time (s, log10 scale)") + scale_x_continuous(limits=c(0, 1000), breaks=c(0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000)) + scale_y_log10(limits=c(0.001, 10), breaks=c(0.001, 0.01, 0.1, 1, 10), labels = comma) + stat_smooth(method = "loess", formula = y ~ x, size = 1) + theme(legend.title=element_blank()) + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
 print (q)
 
-# Cxn-keepalive chart 2:
-print("Client cxn-keepalive: creating chart 2")
+# Cxn-close chart (for publishing paper with bigger fonts and legend over plot area to save space):
+print("Client cxn-close: creating chart 2")
+q <- qplot(df_cxn_close_filt$"Load_Rate", df_cxn_close_filt$"Object_Retrieval_Time", color=df_cxn_close_filt$"Test_Type", xlab="\nLoad Rate (NFPS)", ylab="Connection Close HTTP Object Retrieval Time (s, log10 scale)\n") + scale_x_continuous(limits=c(0, 1000), breaks=c(0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000)) + scale_y_log10(limits=c(0.001, 10), breaks=c(0.001, 0.01, 0.1, 1, 10), labels = comma) + stat_smooth(method = "loess", formula = y ~ x, size = 1) + theme(legend.title=element_blank()) + theme(axis.title.x = element_text(size=15), axis.title.y = element_text(size=15), axis.text.x = element_text(size=14), axis.text.y = element_text(size=14), legend.position = c(.87, .6))
+print (q)
+
+# Cxn-keepalive chart:
+print("Client cxn-keepalive: creating chart")
 q <- qplot(df_cxn_keepalive_filt$"Load_Rate", df_cxn_keepalive_filt$"Object_Retrieval_Time", color=df_cxn_keepalive_filt$"Test_Type", xlab="Load Rate (NFPS)", ylab="Connection Keepalive HTTP Object Retrieval Time (s, log10 scale)") + scale_x_continuous(limits=c(0, 1000), breaks=c(0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000)) + scale_y_log10(limits=c(0.001, 10), breaks=c(0.001, 0.01, 0.1, 1, 10), labels = comma) + stat_smooth(method = "loess", formula = y ~ x, size = 1) + theme(legend.title=element_blank()) + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
+print (q)
+
+# Cxn-keepalive chart (for publishing paper with bigger fonts and legend over plot area to save space):
+print("Client cxn-keepalive: creating chart 2")
+q <- qplot(df_cxn_keepalive_filt$"Load_Rate", df_cxn_keepalive_filt$"Object_Retrieval_Time", color=df_cxn_keepalive_filt$"Test_Type", xlab="\nLoad Rate (NFPS)", ylab="Connection Keepalive HTTP Object Retrieval Time (s, log10 scale)\n") + scale_x_continuous(limits=c(0, 1000), breaks=c(0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000)) + scale_y_log10(limits=c(0.001, 1), breaks=c(0.001, 0.01, 0.1, 1), labels = comma) + stat_smooth(method = "loess", formula = y ~ x, size = 1) + theme(legend.title=element_blank()) + theme(axis.title.x = element_text(size=15), axis.title.y = element_text(size=15), axis.text.x = element_text(size=14), axis.text.y = element_text(size=14), legend.position = c(.16, .74))
 print (q)
 
 # Packets to Controller by Test Type
@@ -470,9 +480,9 @@ keeps <- c("Time", "Switch_CPU", "Load_Rate")
 df_nmeta_sw_cpu <- df_nmeta_sw_cpu[keeps]
 
 #*** Chart the result:
-q_cpu_nmeta <- ggplot() + xlab("NFPS Load") + ylab("CPU (%)") + theme(legend.title=element_blank()) + scale_x_continuous(limits=c(10, 500)) + scale_y_continuous(limits=c(0, 100)) + geom_point(data = df_nmeta_ct_cpu, aes(x = Load_Rate, y = Controller_CPU, color = "Controller CPU")) + stat_smooth(method = "loess", data = df_nmeta_ct_cpu, aes(x=Load_Rate, y=Controller_CPU, color = "Controller CPU")) + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
+q_cpu_nmeta <- ggplot() + xlab("\nNFPS Load") + ylab("CPU (%)") + theme(legend.title=element_blank()) + scale_x_continuous(limits=c(10, 500)) + scale_y_continuous(limits=c(0, 100)) + geom_point(data = df_nmeta_ct_cpu, aes(x = Load_Rate, y = Controller_CPU, color = "Controller CPU")) + stat_smooth(method = "loess", data = df_nmeta_ct_cpu, aes(x=Load_Rate, y=Controller_CPU, color = "Controller CPU")) + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
 #*** Add second series to chart (note different data frame):
-q_cpu_nmeta <- q_cpu_nmeta + geom_point(data = df_nmeta_sw_cpu, aes(x=Load_Rate, y=Switch_CPU, color = "Switch CPU")) + stat_smooth(method = "loess", data = df_nmeta_sw_cpu, aes(x=Load_Rate, y=Switch_CPU, color = "Switch CPU")) + scale_color_manual(values=c("#F8766D", "#00BFC4")) 
+q_cpu_nmeta <- q_cpu_nmeta + geom_point(data = df_nmeta_sw_cpu, aes(x=Load_Rate, y=Switch_CPU, color = "Switch CPU")) + stat_smooth(method = "loess", data = df_nmeta_sw_cpu, aes(x=Load_Rate, y=Switch_CPU, color = "Switch CPU")) + scale_color_manual(values=c("#F8766D", "#9ecae1")) 
 
 #---------------------- COMBINED CPU CHARTS - nmeta2-active --------------------
 #*** Create nmeta data frame with other factors removed:
@@ -496,11 +506,11 @@ keeps <- c("Time", "DPAE_CPU", "Load_Rate")
 df_nmeta2a_dp_cpu <- df_nmeta2a_dp_cpu[keeps]
 
 #*** Chart the CPU result:
-q_cpu_nmeta2a <- ggplot() + xlab("NFPS Load") + ylab("CPU (%)") + theme(legend.title=element_blank()) + scale_x_continuous(limits=c(10, 500)) + scale_y_continuous(limits=c(0, 100)) + geom_point(data = df_nmeta2a_ct_cpu, aes(x = Load_Rate, y = Controller_CPU, color = "Controller CPU")) + stat_smooth(method = "loess", data = df_nmeta2a_ct_cpu, aes(x=Load_Rate, y=Controller_CPU, color = "Controller CPU")) + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
+q_cpu_nmeta2a <- ggplot() + xlab("\nNFPS Load") + ylab("CPU (%)") + theme(legend.title=element_blank()) + scale_x_continuous(limits=c(10, 500)) + scale_y_continuous(limits=c(0, 100)) + geom_point(data = df_nmeta2a_ct_cpu, aes(x = Load_Rate, y = Controller_CPU, color = "Controller CPU")) + stat_smooth(method = "loess", data = df_nmeta2a_ct_cpu, aes(x=Load_Rate, y=Controller_CPU, color = "Controller CPU")) + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
 #*** Add second series to chart for switch CPU (note different data frame):
 q_cpu_nmeta2a <- q_cpu_nmeta2a + geom_point(data = df_nmeta2a_sw_cpu, aes(x=Load_Rate, y=Switch_CPU, color = "Switch CPU")) + stat_smooth(method = "loess", data = df_nmeta2a_sw_cpu, aes(x=Load_Rate, y=Switch_CPU, color = "Switch CPU"))
 #*** Add third series to chart for DPAE CPU (note different data frame):
-q_cpu_nmeta2a <- q_cpu_nmeta2a + geom_point(data = df_nmeta2a_dp_cpu, aes(x=Load_Rate, y=DPAE_CPU, color = "DPAE CPU")) + stat_smooth(method = "loess", data = df_nmeta2a_dp_cpu, aes(x=Load_Rate, y=DPAE_CPU, color = "DPAE CPU")) + scale_color_manual(values=c("#F8766D", "#00BA38", "#00BFC4"))
+q_cpu_nmeta2a <- q_cpu_nmeta2a + geom_point(data = df_nmeta2a_dp_cpu, aes(x=Load_Rate, y=DPAE_CPU, color = "DPAE CPU")) + stat_smooth(method = "loess", data = df_nmeta2a_dp_cpu, aes(x=Load_Rate, y=DPAE_CPU, color = "DPAE CPU")) + scale_color_manual(values=c("#F8766D", "#009934", "#9ecae1"))
 
 #-------------- Print COMBINED CPU CHARTS - nmeta, nmeta2-active --------------------
 #*** Add simple titles to differentiate the 3 charts:
