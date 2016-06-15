@@ -202,14 +202,6 @@ colnames(df_combined)[names(df_combined)=="Test_Type.x"] <- "Test_Type"
 colnames(df_combined)[names(df_combined)=="Dir_Path.x"] <- "Dir_Path"
 
 # ============================= CHARTING ===============================
-# Plot results on a chart:
-g <- ggplot(df_iperf_pc, aes(x=Hostname, y=Bandwidth)) +
-    geom_point(shape=1) +
-    facet_grid(. ~ Test_Type, labeller=fx_chart_facet_labeller) +
-    scale_y_log10() + ggtitle("Statistical Regression Tests") +
-    xlab("Hostname") +
-    ylab("Bandwidth (bps - Log10)")
-print (g)
 
 # Packets to DPAE vs Time to Treat:
 print("Creating chart for Packets to DPAE vs Time to Treat")
@@ -231,3 +223,7 @@ print("Creating chart for Bandwidth vs Packets to DPAE")
 q <- qplot(df_combined$"Packets_to_DPAE", df_combined$"Bandwidth", color=df_combined$"Test_Type", main="Nmeta2 Statistical Classifier - Iperf Average Bandwidth vs TC Packets to DPAE by Mode", xlab="Packets to DPAE (log10 scale)", ylab="Bandwidth (bps -  log10 scale)") + scale_x_log10(limits=c(1, 400), breaks=c(0.1, 1, 3, 10, 33, 100, 333), labels = comma) + scale_y_log10(limits=c(50000, 1000000), breaks=c(100000, 333333, 1000000),labels = comma) + geom_point(aes(shape=df_combined$"Test_Type"), size = 3) + theme(legend.title=element_blank())
 print (q)
 
+# Bandwidth vs Packets to DPAE 2:
+print("Creating chart for Bandwidth vs Packets to DPAE - for Publishing Paper half page width to be readable")
+q <- ggplot() + xlab("\nPackets to DPAE (log10 scale)") + ylab("Bandwidth (bps -  log10 scale)\n") + theme(legend.title=element_blank()) + scale_x_log10(limits=c(1, 400), breaks=c(0.1, 1, 3, 10, 33, 100, 333), labels = comma) + scale_y_log10(limits=c(50000, 1000000), breaks=c(100000, 333333, 1000000),labels = comma) + geom_point(data = df_combined, aes(x = Packets_to_DPAE, y = Bandwidth, color = df_combined$"Test_Type")) + theme(axis.title.x = element_text(size=15), axis.title.y = element_text(size=15)) + theme(axis.text.x = element_text(size=12), axis.text.y = element_text(size=12)) + theme(legend.position = c(.3, .7)) + theme(legend.text=element_text(size=12))
+print (q)
