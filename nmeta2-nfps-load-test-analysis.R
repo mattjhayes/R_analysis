@@ -402,6 +402,9 @@ print("Client cxn-keepalive: creating chart 2")
 q <- qplot(df_cxn_keepalive_filt$"Load_Rate", df_cxn_keepalive_filt$"Object_Retrieval_Time", color=df_cxn_keepalive_filt$"Test_Type", xlab="\nLoad Rate (NFPS)", ylab="Connection Keepalive HTTP Object Retrieval Time (s, log10 scale)\n") + scale_x_continuous(limits=c(0, 1000), breaks=c(0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000)) + scale_y_log10(limits=c(0.001, 1), breaks=c(0.001, 0.01, 0.1, 1), labels = comma) + stat_smooth(method = "loess", formula = y ~ x, size = 1) + theme(legend.title=element_blank()) + theme(axis.title.x = element_text(size=15), axis.title.y = element_text(size=15), axis.text.x = element_text(size=14), axis.text.y = element_text(size=14), legend.position = c(.16, .74))
 print (q)
 
+q <- ggplot(data=df_cxn_keepalive_filt, aes(x=Load_Rate, y=Object_Retrieval_Time, fill=Test_Type, color=Test_Type)) + xlab("\nLoad Rate (NFPS)") + ylab("Connection Keepalive HTTP Object Retrieval Time (s, log10 scale)\n") + theme(legend.title=element_blank()) + scale_x_continuous(limits=c(0, 1000), breaks=c(0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000)) + scale_y_log10(limits=c(0.001, 1), breaks=c(0.001, 0.01, 0.1, 1), labels = comma) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=14), axis.title.y = element_text(size=14), legend.position = c(.16, .74))
+print (q)
+
 # Packets to Controller by Test Type
 q <- ggplot(data=df_ct_mosp_filt, aes(x=Load_Rate, y=Controller_Pkt_In, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Controller Packets Received per Interval (pkts, log10 scale)") + theme(legend.title=element_blank()) + scale_x_continuous(limits=c(10, 1000)) + geom_point(aes(x=Load_Rate, y=Controller_Pkt_In, color=Test_Type)) + scale_y_log10(limits=c(0.1, 1000), breaks=c(1, 3, 10, 33, 100, 333, 1000), labels = comma) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
 print (q)
@@ -529,3 +532,5 @@ q_cpu_nmeta2a <- q_cpu_nmeta2a + theme(legend.position="none")
 grid.arrange(legend, q_cpu_nmeta, q_cpu_nmeta2a,
             widths = c(2.7, 2.7), heights = c(0.2, 2.5),
             layout_matrix = rbind(c(1,1), c(2,3)))
+
+
