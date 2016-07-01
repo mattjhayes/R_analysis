@@ -27,39 +27,9 @@ print(paste0("Found ", files_dir_2))
 if (length(files_dir_2) < 1) {
   stop("No subdirectories?")
 }
-# ===================== CHART FUNCTIONS ================================
-fx_chart_scatter_1 <- function(data_x, data_y, data_type, data.frame, chart_title, x_axis_label, y_axis_label) {
-    # Scatter lattice with panel per test type and R squared stat analysis:
-    # Build formula from variables we were passed:
-    y_vs_x <- paste(data_y, data_x, sep="~")
-    chart_formula <- formula(paste(y_vs_x, data_type, sep="|"))
-    scatter.lattice <- xyplot(chart_formula, 
-                          data = data.frame,
-                          main=chart_title,
-                          panel = function(x, y, ...) {
-                            panel.xyplot(x, y, ...)
-                            lm1 <- lm(y ~ x)
-                            lm1sum <- summary(lm1)
-                            r2 <- lm1sum$adj.r.squared
-                            panel.abline(a = lm1$coefficients[1], 
-                                         b = lm1$coefficients[2])
-                            panel.text(labels = 
-                                         bquote(italic(R)^2 == 
-                                                  .(format(r2, 
-                                                           digits = 3))),
-                                       x = 30, y = 1000)
-                            },
-                          xscale.components = xscale.components.subticks,
-                          yscale.components = yscale.components.subticks,
-                          xlab=x_axis_label,
-                          ylab=y_axis_label,
-                          as.table = TRUE)
-    p = scatter.lattice
-    print (p)
-}
 
 # =============================== BUILD FILE DATA FUNCTION =============
-fx_build_file_data <- function(file_name, files_dir_2) {
+fx_build_file_data <- function(file_name, files_dir_2, bad_tests) {
     # Use this to build file data prior to importing CSVs
     # Pass it the name of the CSV file and base directory and it will trawl
     # the directory structure and return list of 3 vectors that are needed
@@ -74,13 +44,18 @@ fx_build_file_data <- function(file_name, files_dir_2) {
             base_dir_4 <- paste(base_dir_3, test_timestamp, sep = '/')
             files_dir_4 <- list.files(path=base_dir_4)
             if (is.element(file_name, files_dir_4)) {
-                full_path = paste(base_dir_4, file_name, sep = '/')
-                # Append the full path of the file to the list
-                files_vector <- c(files_vector, full_path)
-                # Use test_types to hold mapping between full file path and type of test:
-                test_types_vector[full_path] <- test_type
-                # Store the directory path:
-                dir_path_vector[full_path] <- base_dir_4
+                if (!(test_timestamp %in% bad_tests)) {
+                    full_path = paste(base_dir_4, file_name, sep = '/')
+                    # Append the full path of the file to the list
+                    files_vector <- c(files_vector, full_path)
+                    # Use test_types to hold mapping between full file path and type of test:
+                    test_types_vector[full_path] <- test_type
+                    # Store the directory path:
+                    dir_path_vector[full_path] <- base_dir_4
+                }
+                else {
+                    cat(sprintf("Warning, ignoring bad test type=\"%s\" timestamp=\"%s\" because of errors. Please fix...\n", test_type, test_timestamp))
+                }
             }
         }
     }
@@ -90,23 +65,43 @@ fx_build_file_data <- function(file_name, files_dir_2) {
     return(returnList)
 }
 
-# =========================== CHART FACET (FRAME) LABELLER =============
-fx_chart_facet_labeller <- function(var, value){
-    value <- as.character(value)
-    if (var=="Test_Type") { 
-        value[value=="constrained-bw-iperf"] <- "Iperf Constrained Bandwidth"
-        value[value=="unconstrained-bw-iperf"]   <- "Iperf Unconstrained Bandwidth Control"
+# =============================== BUILD FILE DATA FUNCTION =============
+fx_check_4_bad_tests <- function(files_dir_2) {
+    # Use this to build file data of directories that should be excluded
+    # because they have are bad tests (i.e. something went wrong, so
+    # their presence should be recorded but excluded from results)
+    bad_test_timestamps <- vector()
+
+    for (test_type in files_dir_2) {
+        base_dir_3 <- paste(base_dir_2, test_type, sep = '/')
+        files_dir_3 <- list.files(path=base_dir_3)
+        for (test_timestamp in files_dir_3) {
+            base_dir_4 <- paste(base_dir_3, test_timestamp, sep = '/')
+            files_dir_4 <- list.files(path=base_dir_4)
+            # Does error.txt exist in this directory?:
+            if (is.element("error.txt", files_dir_4)) {
+                # Append the bad test timestamp to a vector:
+                bad_test_timestamps <- c(bad_test_timestamps, test_timestamp)
+            }
+        }
     }
-    return(value)
+    return(bad_test_timestamps)
 }
 
 # ===================== MAIN PROGRAM ===================================
+
+# Remove any bad test runs as they can corrupt the results in strange
+# ways but ensure that the presence of bad test runs is made visible
+# as this indicates a problem that needs to be fixed...
+bad_test_timestamps = fx_check_4_bad_tests(files_dir_2)
+
+#========================= Iperf Results ===============================
 # Note: Iperf CSV format is:
 # Time, local_IP, local_port, server_IP, server_port, duration,
-#   Interval, Transfer, Bandwidth 
+#   Interval, Transfer, Bandwidth
 
 # Call function (see further up) to build file data:
-files_pc <- fx_build_file_data("pc1.example.com-5555-iperf_result.txt", files_dir_2)
+files_pc <- fx_build_file_data("pc1.example.com-5555-iperf_result.txt", files_dir_2, bad_test_timestamps)
 
 print ("Reading Iperf result CSV files into a list")
 # Read the result CSV files into a list:
@@ -136,7 +131,7 @@ for (i in 1:length(files_list_pc)) {
 
 #======================== Treatment Time ===============================
 # Call function (see further up) to build file data:
-files_tt <- fx_build_file_data("post_process_treatment_time_delta.txt", files_dir_2)
+files_tt <- fx_build_file_data("post_process_treatment_time_delta.txt", files_dir_2, bad_test_timestamps)
 
 print ("Reading Treatment Time result CSV files into a list")
 # Read the result CSV files into a list:
@@ -162,7 +157,7 @@ for (i in 1:length(files_list_tt)) {
 
 #======================== Packets to DPAE ==============================
 # Call function (see further up) to build file data:
-files_p2dpae <- fx_build_file_data("post_process_dpae_pkts.txt", files_dir_2)
+files_p2dpae <- fx_build_file_data("post_process_dpae_pkts.txt", files_dir_2, bad_test_timestamps)
 
 print ("Reading Packets to DPAE result CSV files into a list")
 # Read the result CSV files into a list:
@@ -205,10 +200,6 @@ colnames(df_combined)[names(df_combined)=="Dir_Path.x"] <- "Dir_Path"
 
 # Packets to DPAE vs Time to Treat:
 print("Creating chart for Packets to DPAE vs Time to Treat")
-fx_chart_scatter_1("Time_to_Treatment", "Packets_to_DPAE", "Test_Type", df_combined, "Packets to DPAE vs Time to Treat", "Time to Treatment", "Packets to DPAE")
-
-# Packets to DPAE vs Time to Treat 2:
-print("Creating chart for Packets to DPAE vs Time to Treat 2")
 q <- qplot(df_combined$"Time_to_Treatment", df_combined$"Packets_to_DPAE", color=df_combined$"Test_Type", main="Packets to DPAE vs Time to Treat", xlab="Time to Treatment (seconds)", ylab="Packets to DPAE (packets)")
 q + labs(color="custom title")
 print (q)
@@ -220,10 +211,10 @@ print (q)
 
 # Bandwidth vs Packets to DPAE:
 print("Creating chart for Bandwidth vs Packets to DPAE")
-q <- qplot(df_combined$"Packets_to_DPAE", df_combined$"Bandwidth", color=df_combined$"Test_Type", main="Nmeta2 Statistical Classifier - Iperf Average Bandwidth vs TC Packets to DPAE by Mode", xlab="Packets to DPAE (log10 scale)", ylab="Bandwidth (bps -  log10 scale)") + scale_x_log10(limits=c(1, 400), breaks=c(0.1, 1, 3, 10, 33, 100, 333), labels = comma) + scale_y_log10(limits=c(50000, 1000000), breaks=c(100000, 333333, 1000000),labels = comma) + geom_point(aes(shape=df_combined$"Test_Type"), size = 3) + theme(legend.title=element_blank())
+q <- qplot(df_combined$"Packets_to_DPAE", df_combined$"Bandwidth", color=df_combined$"Test_Type", main="Nmeta2 Statistical Classifier - Iperf Average Bandwidth vs TC Packets to DPAE by Mode", xlab="Packets to DPAE (log10 scale)", ylab="Bandwidth (bps -  log10 scale)") + scale_x_log10(limits=c(1, 1000), breaks=c(0.1, 1, 3, 10, 33, 100, 333), labels = comma) + scale_y_log10(limits=c(50000, 1000000), breaks=c(100000, 333333, 1000000),labels = comma) + geom_point(aes(shape=df_combined$"Test_Type"), size = 3) + theme(legend.title=element_blank())
 print (q)
 
 # Bandwidth vs Packets to DPAE 2:
 print("Creating chart for Bandwidth vs Packets to DPAE - for Publishing Paper half page width to be readable")
-q <- ggplot() + xlab("\nPackets to DPAE (log10 scale)") + ylab("Bandwidth (bps -  log10 scale)\n") + theme(legend.title=element_blank()) + scale_x_log10(limits=c(1, 400), breaks=c(0.1, 1, 3, 10, 33, 100, 333), labels = comma) + scale_y_log10(limits=c(50000, 1000000), breaks=c(100000, 333333, 1000000),labels = comma) + geom_point(data = df_combined, aes(x = Packets_to_DPAE, y = Bandwidth, color = df_combined$"Test_Type")) + theme(axis.title.x = element_text(size=15), axis.title.y = element_text(size=15)) + theme(axis.text.x = element_text(size=12), axis.text.y = element_text(size=12)) + theme(legend.position = c(.3, .7)) + theme(legend.text=element_text(size=12))
+q <- ggplot() + xlab("\nPackets to DPAE (log10 scale)") + ylab("Bandwidth (bps -  log10 scale)\n") + theme(legend.title=element_blank()) + scale_x_log10(limits=c(1, 1000), breaks=c(0.1, 1, 3, 10, 33, 100, 333), labels = comma) + scale_y_log10(limits=c(50000, 1000000), breaks=c(100000, 333333, 1000000),labels = comma) + geom_point(data = df_combined, aes(x = Packets_to_DPAE, y = Bandwidth, color = df_combined$"Test_Type")) + theme(axis.title.x = element_text(size=15), axis.title.y = element_text(size=15)) + theme(axis.text.x = element_text(size=12), axis.text.y = element_text(size=12)) + theme(legend.position = c(.3, .7)) + theme(legend.text=element_text(size=12))
 print (q)
