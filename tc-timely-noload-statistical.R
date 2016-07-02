@@ -216,5 +216,5 @@ print (q)
 
 # Bandwidth vs Packets to DPAE 2:
 print("Creating chart for Bandwidth vs Packets to DPAE - for Publishing Paper half page width to be readable")
-q <- ggplot() + xlab("\nPackets to DPAE (log10 scale)") + ylab("Bandwidth (bps -  log10 scale)\n") + theme(legend.title=element_blank()) + scale_x_log10(limits=c(1, 1000), breaks=c(0.1, 1, 3, 10, 33, 100, 333), labels = comma) + scale_y_log10(limits=c(50000, 1000000), breaks=c(100000, 333333, 1000000),labels = comma) + geom_point(data = df_combined, aes(x = Packets_to_DPAE, y = Bandwidth, color = df_combined$"Test_Type")) + theme(axis.title.x = element_text(size=15), axis.title.y = element_text(size=15)) + theme(axis.text.x = element_text(size=12), axis.text.y = element_text(size=12)) + theme(legend.position = c(.3, .7)) + theme(legend.text=element_text(size=12))
+q <- ggplot() + xlab("\nPackets to DPAE (log10 scale)") + ylab("Bandwidth (bps -  log10 scale)\n") + theme(legend.title=element_blank()) + scale_x_log10() + scale_y_log10() + geom_point(data = df_combined, aes(x = Packets_to_DPAE, y = Bandwidth, color = df_combined$"Test_Type")) + theme(axis.title.x = element_text(size=15), axis.title.y = element_text(size=15)) + theme(axis.text.x = element_text(size=12), axis.text.y = element_text(size=12)) + theme(legend.position = c(.3, .7)) + theme(legend.text=element_text(size=12))
 print (q)
