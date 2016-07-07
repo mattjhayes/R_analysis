@@ -274,8 +274,6 @@ print ("Reading DPAE mosp result CSV files into a list")
 files_list <- lapply(files$files, read.csv)
 
 print ("Generating DPAE mosp data frame")
-# HASH OUT ONE OF THESE, FIRST IS FOR BACKWARD COMPATIBILITY WITH OLD RESULTS:
-#col_select <- c("dp1.cpu", "dp1.swap.in", "dp1.swap.out", "dp1.pkt.in", "dp1.pkt.out")
 col_select <- c("dp1.cpu.0.", "dp1.swap.in", "dp1.swap.out", "dp1.pkts.in.eth1.", "dp1.pkts.in.eth1.")
 col_names <- c("DPAE_CPU", "DPAE_Swap_In", "DPAE_Swap_Out", "DPAE_Pkt_In", "DPAE_Pkt_Out")
 df_dp_mosp <- fx_csv2df(files_list, files, col_select, col_names)

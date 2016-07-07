@@ -131,31 +131,31 @@ for (i in 1:length(files_list_pc)) {
 
 #======================== Treatment Time ===============================
 # Call function (see further up) to build file data:
-files_tt <- fx_build_file_data("post_process_treatment_time_delta.txt", files_dir_2, bad_test_timestamps)
+#files_tt <- fx_build_file_data("post_process_treatment_time_delta.txt", files_dir_2, bad_test_timestamps)
 
-print ("Reading Treatment Time result CSV files into a list")
+#print ("Reading Treatment Time result CSV files into a list")
 # Read the result CSV files into a list:
-files_list_tt <- lapply(files_tt$files, read.csv, header=FALSE)
+#files_list_tt <- lapply(files_tt$files, read.csv, header=FALSE)
 
 # Produce a data frame of treatment time:
-df_tt <- data.frame()
-for (i in 1:length(files_list_tt)) {
-    test_type <- unname(files_tt$test_types[i])
-    dir_path <- unname(files_tt$dir_path[i])
-    df_tmp <- data.frame(i)
-    colnames(df_tmp)[1] = "Test Number"
-    # Add in the 'y' column(s):
-    df_tmp[2] <- files_list_tt[[i]][,1]
-    colnames(df_tmp)[2] <- "Time_to_Treatment"
-    #*** Add filled Test_Type column:
-    df_tmp$Test_Type <- test_type
-    #*** Add filled Dir_Path column:
-    df_tmp$Dir_Path <- dir_path
-    # Accumulate the additional data rows:
-    df_tt = rbind(df_tt, df_tmp)
-}
+#df_tt <- data.frame()
+#for (i in 1:length(files_list_tt)) {
+#    test_type <- unname(files_tt$test_types[i])
+#    dir_path <- unname(files_tt$dir_path[i])
+#    df_tmp <- data.frame(i)
+#    colnames(df_tmp)[1] = "Test Number"
+#    # Add in the 'y' column(s):
+#    df_tmp[2] <- files_list_tt[[i]][,1]
+#    colnames(df_tmp)[2] <- "Time_to_Treatment"
+#    #*** Add filled Test_Type column:
+#    df_tmp$Test_Type <- test_type
+#    #*** Add filled Dir_Path column:
+#    df_tmp$Dir_Path <- dir_path
+#    # Accumulate the additional data rows:
+#    df_tt = rbind(df_tt, df_tmp)
+#}
 
-#======================== Packets to DPAE ==============================
+#======================== Packets to DPAE (from flow entry) ============
 # Call function (see further up) to build file data:
 files_p2dpae <- fx_build_file_data("post_process_dpae_pkts.txt", files_dir_2, bad_test_timestamps)
 
@@ -181,15 +181,50 @@ for (i in 1:length(files_list_p2dpae)) {
     df_p2dpae = rbind(df_p2dpae, df_tmp)
 }
 
+#======================== Packets to DPAE (from Interface stats) =======
+# Call function (see further up) to build file data:
+files_p2dpae2 <- fx_build_file_data("post_process_dpae_interface_pkts.txt", files_dir_2, bad_test_timestamps)
+
+print ("Reading Packets to DPAE (interface) result CSV files into a list")
+# Read the result CSV files into a list:
+files_list_p2dpae2 <- lapply(files_p2dpae2$files, read.csv, header=FALSE)
+
+# Produce a data frame of packets to DPAE:
+df_p2dpae2 <- data.frame()
+for (i in 1:length(files_list_p2dpae2)) {
+    test_type <- unname(files_p2dpae2$test_types[i])
+    dir_path <- unname(files_p2dpae2$dir_path[i])
+    df_tmp <- data.frame(i)
+    colnames(df_tmp)[1] = "Test Number"
+    # Add in the 'y' column(s):
+    df_tmp[2] <- files_list_p2dpae2[[i]][,1]
+    colnames(df_tmp)[2] <- "Packets_to_DPAE_Interface"
+    #*** Add filled Test_Type column:
+    df_tmp$Test_Type <- test_type
+    #*** Add filled Dir_Path column:
+    df_tmp$Dir_Path <- dir_path
+    # Accumulate the additional data rows:
+    df_p2dpae2 = rbind(df_p2dpae2, df_tmp)
+}
+
 #======================== Combined DF =========================
-df_combined <- merge(df_tt, df_p2dpae,by="Test Number")
+#df_combined <- merge(df_tt, df_p2dpae,by="Test Number")
+# Fix double-up of columns:
+#drops <- c("Test_Type.y","Dir_Path.y")
+#df_combined <- df_combined[,!(names(df_combined) %in% drops)]
+#colnames(df_combined)[names(df_combined)=="Test_Type.x"] <- "Test_Type"
+#colnames(df_combined)[names(df_combined)=="Dir_Path.x"] <- "Dir_Path"
+
+#df_combined <- merge(df_combined, df_iperf_pc,by="Test Number")
+
+df_combined <- merge(df_p2dpae, df_iperf_pc,by="Test Number")
 # Fix double-up of columns:
 drops <- c("Test_Type.y","Dir_Path.y")
 df_combined <- df_combined[,!(names(df_combined) %in% drops)]
 colnames(df_combined)[names(df_combined)=="Test_Type.x"] <- "Test_Type"
 colnames(df_combined)[names(df_combined)=="Dir_Path.x"] <- "Dir_Path"
 
-df_combined <- merge(df_combined, df_iperf_pc,by="Test Number")
+df_combined <- merge(df_combined, df_p2dpae2,by="Test Number")
 # Fix double-up of columns:
 drops <- c("Test_Type.y","Dir_Path.y")
 df_combined <- df_combined[,!(names(df_combined) %in% drops)]
@@ -199,15 +234,15 @@ colnames(df_combined)[names(df_combined)=="Dir_Path.x"] <- "Dir_Path"
 # ============================= CHARTING ===============================
 
 # Packets to DPAE vs Time to Treat:
-print("Creating chart for Packets to DPAE vs Time to Treat")
-q <- qplot(df_combined$"Time_to_Treatment", df_combined$"Packets_to_DPAE", color=df_combined$"Test_Type", main="Packets to DPAE vs Time to Treat", xlab="Time to Treatment (seconds)", ylab="Packets to DPAE (packets)")
-q + labs(color="custom title")
-print (q)
+#print("Creating chart for Packets to DPAE vs Time to Treat")
+#q <- qplot(df_combined$"Time_to_Treatment", df_combined$"Packets_to_DPAE", color=df_combined$"Test_Type", main="Packets to DPAE vs Time to Treat", xlab="Time to Treatment (seconds)", ylab="Packets to DPAE (packets)")
+#q + labs(color="custom title")
+#print (q)
 
 # Bandwidth vs Time to Treatment:
-print("Creating chart for Bandwidth vs Time to Treatment")
-q <- qplot(df_combined$"Time_to_Treatment", df_combined$"Bandwidth", color=df_combined$"Test_Type", main="Bandwidth vs Time to Treatment", xlab="Time to Treatment (seconds)", ylab="Bandwidth (bps)")
-print (q)
+#print("Creating chart for Bandwidth vs Time to Treatment")
+#q <- qplot(df_combined$"Time_to_Treatment", df_combined$"Bandwidth", color=df_combined$"Test_Type", main="Bandwidth vs Time to Treatment", xlab="Time to Treatment (seconds)", ylab="Bandwidth (bps)")
+#print (q)
 
 # Bandwidth vs Packets to DPAE:
 print("Creating chart for Bandwidth vs Packets to DPAE")
@@ -217,4 +252,14 @@ print (q)
 # Bandwidth vs Packets to DPAE 2:
 print("Creating chart for Bandwidth vs Packets to DPAE - for Publishing Paper half page width to be readable")
 q <- ggplot() + xlab("\nPackets to DPAE (log10 scale)") + ylab("Bandwidth (bps -  log10 scale)\n") + theme(legend.title=element_blank()) + scale_x_log10() + scale_y_log10() + geom_point(data = df_combined, aes(x = Packets_to_DPAE, y = Bandwidth, color = df_combined$"Test_Type")) + theme(axis.title.x = element_text(size=15), axis.title.y = element_text(size=15)) + theme(axis.text.x = element_text(size=12), axis.text.y = element_text(size=12)) + theme(legend.position = c(.3, .7)) + theme(legend.text=element_text(size=12))
+print (q)
+
+# Bandwidth vs Packets to DPAE Interface:
+print("Creating chart for Bandwidth vs Packets to DPAE Interface")
+q <- ggplot() + xlab("\nPackets to DPAE Interface (log10 scale)") + ylab("Bandwidth (bps -  log10 scale)\n") + theme(legend.title=element_blank()) + scale_x_log10() + scale_y_log10() + geom_point(data = df_combined, aes(x = Packets_to_DPAE_Interface, y = Bandwidth, color = df_combined$"Test_Type")) + theme(axis.title.x = element_text(size=15), axis.title.y = element_text(size=15)) + theme(axis.text.x = element_text(size=12), axis.text.y = element_text(size=12)) + theme(legend.text=element_text(size=12))
+print (q)
+
+# Bandwidth vs Packets to DPAE Interface 2:
+print("Creating chart for Bandwidth vs Packets to DPAE - for Publishing Paper half page width to be readable")
+q <- ggplot() + xlab("\nPackets to DPAE Interface (log10 scale)") + ylab("Bandwidth (bps -  log10 scale)\n") + theme(legend.title=element_blank()) + scale_x_log10() + scale_y_log10() + geom_point(data = df_combined, aes(x = Packets_to_DPAE_Interface, y = Bandwidth, color = df_combined$"Test_Type")) + theme(axis.title.x = element_text(size=15), axis.title.y = element_text(size=15)) + theme(axis.text.x = element_text(size=12), axis.text.y = element_text(size=12)) + theme(legend.position = c(.3, .7)) + theme(legend.text=element_text(size=12))
 print (q)
