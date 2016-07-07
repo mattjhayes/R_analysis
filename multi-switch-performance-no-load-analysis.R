@@ -2,7 +2,7 @@
 
 # Run in rstudio with:
 
-# source("~/R_analysis/multi-switch-performance-no-load-analysis.R")
+# source("~/R_analysis/nfps-load-tests/multi-switch-performance-no-load-analysis.R")
 
 # Imports:
 libs <- c('ggplot2', 'latticeExtra', 'gridExtra', 'MASS', 
