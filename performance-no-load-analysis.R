@@ -198,5 +198,5 @@ print (q)
 
 print("Creating bar chart for TCP RTT (as measured by hping3) - for Publishing Paper half page width to be readable")
 q <- ggplot(data=df_hping3_stats, aes(x=Test_Type, y=mean, fill=Test_Type)) + xlab("\nTest Type") + ylab("TCP RTT (s)\n") + geom_bar(position=position_dodge(), stat="identity") + geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.2, position=position_dodge(.9)) +
-    theme(axis.title.x = element_text(size=18), axis.title.y = element_text(size=18), axis.text.x = element_text(size=15), axis.text.y = element_text(size=15), legend.position="none")
+    theme(axis.title.x = element_text(size=21), axis.title.y = element_text(size=21), axis.text.x = element_text(size=18), axis.text.y = element_text(size=18), legend.position="none")
 print (q)
