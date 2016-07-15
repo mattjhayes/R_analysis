@@ -236,15 +236,15 @@ print (q)
 #---------------------------------- Results ----------------------------
 
 # Data Plane update delay for Learnt MAC by Test Type
-q <- ggplot(data=df_cp_snoop, aes(x=Load_Rate, y=DP_Apply_Timeliness, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("MAC Learning Treatment Delay (s)") + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=DP_Apply_Timeliness, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
+q <- ggplot(data=df_cp_snoop, aes(x=Load_Rate, y=DP_Apply_Timeliness, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("MAC Learning Treatment Delay (s)") + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=DP_Apply_Timeliness, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=21), axis.title.y = element_text(size=21))
 print (q)
 
 # Learning delay to Not Flood Crafted MAC by Test Type
-q2 <- ggplot(data=df_cp_traffic, aes(x=Load_Rate, y=No_Flood_Timeliness, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("MAC Learning No Flooding Delay (s - log10 scale)") + scale_y_log10(limits=c(0.03, 40), labels = comma) + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=No_Flood_Timeliness, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
+q2 <- ggplot(data=df_cp_traffic, aes(x=Load_Rate, y=No_Flood_Timeliness, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("MAC Learning No Flooding Delay (s - log10 scale)") + scale_y_log10(limits=c(0.03, 40), labels = comma) + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=No_Flood_Timeliness, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=21), axis.title.y = element_text(size=21)) + theme(legend.text=element_text(size=16))
 print (q2)
 
 # Packets Flooded to Crafted MAC by Test Type
-q3 <- ggplot(data=df_cp_traffic, aes(x=Load_Rate, y=Flooded_Pkts_to_Crafted_MAC, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Number of Packets Flooded (packets - log10 scale)")  + scale_y_log10(limits=c(0.5, 700), breaks=c(1, 3, 10, 33, 100, 333), labels = comma) + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=Flooded_Pkts_to_Crafted_MAC, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
+q3 <- ggplot(data=df_cp_traffic, aes(x=Load_Rate, y=Flooded_Pkts_to_Crafted_MAC, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Number of Packets Flooded (packets - log10 scale)")  + scale_y_log10(limits=c(0.5, 700), breaks=c(1, 3, 10, 33, 100, 333), labels = comma) + theme(legend.title=element_blank()) + geom_point(aes(x=Load_Rate, y=Flooded_Pkts_to_Crafted_MAC, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=21), axis.title.y = element_text(size=21))
 print (q3)
 
 #-------------------- 2-Up chart for publishing ------------------------

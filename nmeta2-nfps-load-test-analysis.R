@@ -418,7 +418,7 @@ df_cxn_close_filt2 <- df_cxn_close_filt[-factor_to_remove,]
 factor_to_remove <- which(df_cxn_close_filt2$Test_Type=="nmeta2-passive")
 df_cxn_close_filt2 <- df_cxn_close_filt2[-factor_to_remove,]
 df_cxn_close_filt2$Test_Type <- factor(df_cxn_close_filt2$Test_Type)
-q1 <- ggplot(data=df_cxn_close_filt2, aes(x=Load_Rate, y=Object_Retrieval_Time, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Connection Close HTTP Object Retrieval Time (s)") + theme(legend.title=element_blank()) + scale_x_continuous(limits=c(10, 200)) + geom_point(aes(x=Load_Rate, y=Object_Retrieval_Time, color=Test_Type)) + stat_smooth(method = "loess") + scale_y_continuous(limits=c(0.001, 4), breaks=c(0.5,1,1.5,2,2.5,3,3.5,4), labels = comma) + theme(axis.title.x = element_text(size=14), axis.title.y = element_text(size=14)) + theme(legend.text=element_text(size=16))
+q1 <- ggplot(data=df_cxn_close_filt2, aes(x=Load_Rate, y=Object_Retrieval_Time, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Connection Close HTTP Object Retrieval Time (s)") + theme(legend.title=element_blank()) + scale_x_continuous(limits=c(10, 200)) + geom_point(aes(x=Load_Rate, y=Object_Retrieval_Time, color=Test_Type)) + stat_smooth(method = "loess") + scale_y_continuous(limits=c(0.001, 4), breaks=c(0.5,1,1.5,2,2.5,3,3.5,4), labels = comma) + theme(axis.title.x = element_text(size=18), axis.title.y = element_text(size=18)) + theme(legend.text=element_text(size=18))
 
 # Convert type on df column to num so that smooth line works (won't work for integer)
 df_ct_mosp_filt <- transform(df_ct_mosp_filt, Controller_Pkt_In = as.numeric(Controller_Pkt_In))
@@ -429,10 +429,10 @@ df_ct_mosp_filt2 <- df_ct_mosp_filt[-factor_to_remove,]
 factor_to_remove <- which(df_ct_mosp_filt2$Test_Type=="nmeta2-passive")
 df_ct_mosp_filt2 <- df_ct_mosp_filt2[-factor_to_remove,]
 df_ct_mosp_filt2$Test_Type <- factor(df_ct_mosp_filt2$Test_Type)
-q2 <- ggplot(data=df_ct_mosp_filt2, aes(x=Load_Rate, y=Controller_Pkt_In, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Controller Packets Received per Interval (pkts)") + theme(legend.title=element_blank()) + scale_x_continuous(limits=c(10, 200)) + geom_point(aes(x=Load_Rate, y=Controller_Pkt_In, color=Test_Type)) + scale_y_continuous(limits=c(0, 200), breaks=c(25,50,75,100,125,150,175,200), labels = comma) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=14), axis.title.y = element_text(size=14))
+q2 <- ggplot(data=df_ct_mosp_filt2, aes(x=Load_Rate, y=Controller_Pkt_In, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Controller Packets Received per Interval (pkts)") + theme(legend.title=element_blank()) + scale_x_continuous(limits=c(10, 200)) + geom_point(aes(x=Load_Rate, y=Controller_Pkt_In, color=Test_Type)) + scale_y_continuous(limits=c(0, 200), breaks=c(25,50,75,100,125,150,175,200), labels = comma) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=18), axis.title.y = element_text(size=18))
 
 # Create an nmeta controller cpu chart (Drop nmeta2 factors from DF):
-q3 <- ggplot(data=df_ct_mosp_filt2, aes(x=Load_Rate, y=Controller_CPU, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Controller CPU (%)") + theme(legend.title=element_blank()) + scale_x_continuous(limits=c(10, 200)) + geom_point(aes(x=Load_Rate, y=Controller_CPU, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=14), axis.title.y = element_text(size=14))
+q3 <- ggplot(data=df_ct_mosp_filt2, aes(x=Load_Rate, y=Controller_CPU, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Controller CPU (%)") + theme(legend.title=element_blank()) + scale_x_continuous(limits=c(10, 200)) + geom_point(aes(x=Load_Rate, y=Controller_CPU, color=Test_Type)) + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=18), axis.title.y = element_text(size=18))
 
 #*** Put q1-3 on same page:
 #*** Function to hold legend so that it can be shared and placed at will:

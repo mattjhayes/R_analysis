@@ -231,10 +231,10 @@ colnames(df_combined)[names(df_combined)=="Dir_Path.x"] <- "Dir_Path"
 
 # ============================= CHARTING ===============================
 
-# Packets to DPAE vs Time to Treat:
+# Packets to DPAE vs Time to Treat (bad data):
 print("Creating chart for Packets to DPAE vs Time to Treat")
 q <- qplot(df_combined$"Time_to_Treatment", df_combined$"Packets_to_DPAE", color=df_combined$"Test_Type", main="Packets to DPAE vs Time to Treat", xlab="Time to Treatment (seconds)", ylab="Packets to DPAE (packets)")
-q + labs(color="custom title")
+q + labs(color="custom title") + ggtitle("BAD FE DATA - DO NOT USE")
 print (q)
 
 # Bandwidth vs Time to Treatment:
@@ -242,14 +242,14 @@ print("Creating chart for Bandwidth vs Time to Treatment")
 q <- qplot(df_combined$"Time_to_Treatment", df_combined$"Bandwidth", color=df_combined$"Test_Type", main="Bandwidth vs Time to Treatment", xlab="Time to Treatment (seconds)", ylab="Bandwidth (bps)")
 print (q)
 
-# Bandwidth vs Packets to DPAE:
+# Bandwidth vs Packets to DPAE (bad data):
 print("Creating chart for Bandwidth vs Packets to DPAE")
-q <- qplot(df_combined$"Packets_to_DPAE", df_combined$"Bandwidth", color=df_combined$"Test_Type", main="Nmeta2 Statistical Classifier - Iperf Average Bandwidth vs TC Packets to DPAE by Mode", xlab="Packets to DPAE (log10 scale)", ylab="Bandwidth (bps -  log10 scale)") + scale_x_log10(limits=c(1, 1000), breaks=c(0.1, 1, 3, 10, 33, 100, 333), labels = comma) + scale_y_log10(limits=c(50000, 1000000), breaks=c(100000, 333333, 1000000),labels = comma) + geom_point(aes(shape=df_combined$"Test_Type"), size = 3) + theme(legend.title=element_blank())
+q <- qplot(df_combined$"Packets_to_DPAE", df_combined$"Bandwidth", color=df_combined$"Test_Type", main="Nmeta2 Statistical Classifier - Iperf Average Bandwidth vs TC Packets to DPAE by Mode", xlab="Packets to DPAE (log10 scale)", ylab="Bandwidth (bps -  log10 scale)") + scale_x_log10(limits=c(1, 1000), breaks=c(0.1, 1, 3, 10, 33, 100, 333), labels = comma) + scale_y_log10(limits=c(50000, 1000000), breaks=c(100000, 333333, 1000000),labels = comma) + geom_point(aes(shape=df_combined$"Test_Type"), size = 3) + theme(legend.title=element_blank()) + ggtitle("BAD FE DATA - DO NOT USE")
 print (q)
 
-# Bandwidth vs Packets to DPAE 2:
+# Bandwidth vs Packets to DPAE 2 (bad data):
 print("Creating chart for Bandwidth vs Packets to DPAE - for Publishing Paper half page width to be readable")
-q <- ggplot() + xlab("\nPackets to DPAE (log10 scale)") + ylab("Bandwidth (bps -  log10 scale)\n") + theme(legend.title=element_blank()) + scale_x_log10() + scale_y_log10() + geom_point(data = df_combined, aes(x = Packets_to_DPAE, y = Bandwidth, color = df_combined$"Test_Type")) + theme(axis.title.x = element_text(size=15), axis.title.y = element_text(size=15)) + theme(axis.text.x = element_text(size=12), axis.text.y = element_text(size=12)) + theme(legend.position = c(.3, .7)) + theme(legend.text=element_text(size=12))
+q <- ggplot() + xlab("\nPackets to DPAE (log10 scale)") + ylab("Bandwidth (bps -  log10 scale)\n") + theme(legend.title=element_blank()) + scale_x_log10() + scale_y_log10() + geom_point(data = df_combined, aes(x = Packets_to_DPAE, y = Bandwidth, color = df_combined$"Test_Type")) + theme(axis.title.x = element_text(size=15), axis.title.y = element_text(size=15)) + theme(axis.text.x = element_text(size=12), axis.text.y = element_text(size=12)) + theme(legend.position = c(.3, .7)) + theme(legend.text=element_text(size=12)) + ggtitle("BAD FE DATA - DO NOT USE")
 print (q)
 
 # Bandwidth vs Packets to DPAE Interface:
@@ -259,5 +259,5 @@ print (q)
 
 # Bandwidth vs Packets to DPAE Interface 2:
 print("Creating chart for Bandwidth vs Packets to DPAE - for Publishing Paper half page width to be readable")
-q <- ggplot() + xlab("\nPackets to DPAE Interface (log10 scale)") + ylab("Bandwidth (bps -  log10 scale)\n") + theme(legend.title=element_blank()) + scale_x_log10() + scale_y_log10() + geom_point(data = df_combined, aes(x = Packets_to_DPAE_Interface, y = Bandwidth, color = df_combined$"Test_Type")) + theme(axis.title.x = element_text(size=15), axis.title.y = element_text(size=15)) + theme(axis.text.x = element_text(size=12), axis.text.y = element_text(size=12)) + theme(legend.position = c(.3, .7)) + theme(legend.text=element_text(size=12))
+q <- ggplot() + xlab("\nPackets to DPAE Interface (log10 scale)") + ylab("Bandwidth (bps -  log10 scale)\n") + theme_grey() + theme(legend.title=element_blank()) + scale_x_log10() + scale_y_log10() + geom_point(data = df_combined, aes(x = Packets_to_DPAE_Interface, y = Bandwidth, color = df_combined$"Test_Type")) + theme(axis.title.x = element_text(size=15), axis.title.y = element_text(size=15)) + theme(axis.text.x = element_text(size=12), axis.text.y = element_text(size=12)) + theme(legend.position = c(.3, .7)) + theme(legend.text=element_text(size=12))
 print (q)
