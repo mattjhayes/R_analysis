@@ -104,6 +104,8 @@ fx_csv2df <- function(files_list, files, col_select, col_names) {
             colnames(df_tmp)[j] <- col_names[j - 1]
             j <- j + 1
         }
+        #*** Add filled Switches column:
+        df_tmp$Switches <- as.factor(rep(switches, length(x)))
         #*** Add filled Test_Type column:
         df_tmp$Test_Type <- as.factor(rep(test_type, length(x)))
         #*** Add filled Dir_Path column:
