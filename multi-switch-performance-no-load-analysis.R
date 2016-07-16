@@ -129,11 +129,12 @@ fx_column2df <- function(files_list, files, col_name) {
     df_result <- data.frame()
     # iterate through files and add to result data frame
     for (i in 1:length(files_list)) {
+        switches <- unname(files$switches[i])
         test_type <- unname(files$test_types[i])
         dir_path <- unname(files$dir_path[i])
 
         # TEMP PRINT:
-        cat(sprintf("fx_csv2df: test_type=\"%s\" dir_path=\"%s\"\n", test_type, dir_path))
+        cat(sprintf("fx_column2df: switches=\"%s\" test_type=\"%s\" dir_path=\"%s\"\n", switches, test_type, dir_path))
         
         x <- files_list[[i]][1]
 
@@ -142,6 +143,8 @@ fx_column2df <- function(files_list, files, col_name) {
 
         df_tmp <- data.frame(x)
         colnames(df_tmp)[1] = col_name
+        #*** Add filled Test_Type column:
+        df_tmp$Switches <- as.factor(rep(switches, length(x)))
         #*** Add filled Test_Type column:
         df_tmp$Test_Type <- as.factor(rep(test_type, length(x)))
         #*** Add filled Dir_Path column:
@@ -218,5 +221,9 @@ print (q)
 
 # Multi-Switch Chart for Object Retrieval Time by Number of Switches In-Path:
 q <- ggplot(data=df_cxn_close, aes(x=Switches, y=Object_Retrieval_Time, fill=Test_Type, color=Test_Type)) + xlab("Switches In-Path") + ylab("Object Retrieval Time") + geom_point(aes(x=Switches, y=Object_Retrieval_Time, color=Test_Type)) + stat_smooth(method = "loess") 
+print (q)
+
+# Multi-Switch Chart for TCP RTT (as measured by hping3) by Number of Switches In-Path:
+q <- ggplot(data=df_hping3, aes(x=Switches, y=tcp_rtt, fill=Test_Type, color=Test_Type)) + xlab("Switches In-Path") + ylab("Object Retrieval Time") + geom_point(aes(x=Switches, y=tcp_rtt, color=Test_Type)) + stat_smooth(method = "loess") 
 print (q)
 
