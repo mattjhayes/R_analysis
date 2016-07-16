@@ -81,11 +81,12 @@ fx_csv2df <- function(files_list, files, col_select, col_names) {
     df_result <- data.frame()
     # iterate through files and add to result data frame
     for (i in 1:length(files_list)) {
+        switches <- unname(files$switches[i])
         test_type <- unname(files$test_types[i])
         dir_path <- unname(files$dir_path[i])
 
         # TEMP PRINT:
-        cat(sprintf("fx_csv2df: test_type=\"%s\" dir_path=\"%s\"\n", test_type, dir_path))
+        cat(sprintf("fx_csv2df: switches=\"%s\" test_type=\"%s\" dir_path=\"%s\"\n", switches, test_type, dir_path))
         
         x <- files_list[[i]]$time
 
