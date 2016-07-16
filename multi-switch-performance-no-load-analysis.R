@@ -115,6 +115,8 @@ fx_csv2df <- function(files_list, files, col_select, col_names) {
     }
     # Set Time column to POSIXct data type:
     df_result$Time <- as.POSIXct(df_result$Time)
+    # Set Switches column as numeric data type:
+    df_result <- transform(df_result, Switches = as.numeric(Switches))
     return(df_result)
 }
 
@@ -213,3 +215,8 @@ print("Creating bar chart for TCP RTT (as measured by hping3) - for Publishing P
 q <- ggplot(data=df_hping3_stats, aes(x=Test_Type, y=mean, fill=Test_Type)) + xlab("\nTest Type") + ylab("TCP RTT (s)\n") + geom_bar(position=position_dodge(), stat="identity") + geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.2, position=position_dodge(.9)) +
     theme(axis.title.x = element_text(size=18), axis.title.y = element_text(size=18), axis.text.x = element_text(size=15), axis.text.y = element_text(size=15), legend.position="none")
 print (q)
+
+# Multi-Switch Chart for Object Retrieval Time by Number of Switches In-Path:
+q <- ggplot(data=df_cxn_close, aes(x=Switches, y=Object_Retrieval_Time, fill=Test_Type, color=Test_Type)) + xlab("Switches In-Path") + ylab("Object Retrieval Time") + geom_point(aes(x=Switches, y=Object_Retrieval_Time, color=Test_Type)) + stat_smooth(method = "loess") 
+print (q)
+
