@@ -17,6 +17,9 @@ test_dir_1 <- readline("What is name of directory?")
 
 base_dir_2 <- paste(base_dir, test_dir_1, sep = '/')
 
+# EXAMPLE FULL DIR:
+#~/results/multi-switch-performance-no-load/20160716203320/1/nmeta2-active/20160716203528
+
 print(paste0("Looking for test result data in ", base_dir_2))
 
 files_dir_2 <- list.files(path=base_dir_2)
@@ -32,29 +35,39 @@ if (length(files_dir_2) < 1) {
 fx_build_file_data <- function(file_name, files_dir_2) {
     # Use this to build file data prior to importing CSVs
     # Pass it the name of the CSV file and base directory and it will trawl
-    # the directory structure and return list of 3 vectors that are needed
+    # the directory structure and return list of 4 vectors that are needed
+    # Note that this is a special version for multi-switch directories
+    # Example: multi-switch-performance-no-load/20160716210139/1/nosdn/20160716210654
     files_vector <- vector()
+    switches_vector <- vector()
     test_types_vector <- vector()
     dir_path_vector <- vector()
 
-    for (test_type in files_dir_2) {
-        base_dir_3 <- paste(base_dir_2, test_type, sep = '/')
+    for (switches in files_dir_2) {
+        base_dir_3 <- paste(base_dir_2, switches, sep = '/')
         files_dir_3 <- list.files(path=base_dir_3)
-        for (test_timestamp in files_dir_3) {
-            base_dir_4 <- paste(base_dir_3, test_timestamp, sep = '/')
+        for (test_type in files_dir_3) {
+            base_dir_4 <- paste(base_dir_3, test_type, sep = '/')
             files_dir_4 <- list.files(path=base_dir_4)
-            if (is.element(file_name, files_dir_4)) {
-                full_path = paste(base_dir_4, file_name, sep = '/')
-                # Append the full path of the file to the list
-                files_vector <- c(files_vector, full_path)
-                # Use test_types to hold mapping between full file path and type of test:
-                test_types_vector[full_path] <- test_type
-                # Store the directory path:
-                dir_path_vector[full_path] <- base_dir_4
+            for (test_timestamp in files_dir_4) {
+                base_dir_5 <- paste(base_dir_4, test_timestamp, sep = '/')
+                files_dir_5 <- list.files(path=base_dir_5)
+                if (is.element(file_name, files_dir_5)) {
+                    full_path = paste(base_dir_5, file_name, sep = '/')
+                    # Append the full path of the file to the list
+                    files_vector <- c(files_vector, full_path)
+                    # Number of switches in path:
+                    switches_vector[full_path] <- switches
+                    # Use test_types to hold mapping between full file path and type of test:
+                    test_types_vector[full_path] <- test_type
+                    # Store the directory path:
+                    dir_path_vector[full_path] <- base_dir_5
+                }
             }
         }
     }
     returnList <- list("files" = files_vector,
+                       "switches" = switches_vector,
                        "test_types" = test_types_vector,
                        "dir_path" = dir_path_vector)
     return(returnList)
