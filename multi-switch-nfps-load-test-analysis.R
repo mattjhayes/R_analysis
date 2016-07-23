@@ -387,7 +387,7 @@ print (q)
 
 # Cxn-close chart (for publishing paper with bigger fonts and legend over plot area to save space):
 print("Client cxn-close: creating chart 2")
-q <- qplot(df_cxn_close_filt$"Load_Rate", df_cxn_close_filt$"Object_Retrieval_Time", color=df_cxn_close_filt$"Test_Type", xlab="\nLoad Rate (NFPS)", ylab="Connection Close HTTP Object Retrieval Time (s, log10 scale)\n") + scale_x_continuous() + scale_y_log10() + stat_smooth(method = "loess", formula = y ~ x, size = 1) + theme(legend.title=element_blank()) + theme(axis.title.x = element_text(size=15), axis.title.y = element_text(size=15), axis.text.x = element_text(size=14), axis.text.y = element_text(size=14), legend.position = c(.87, .6))
+q <- qplot(df_cxn_close_filt$"Load_Rate", df_cxn_close_filt$"Object_Retrieval_Time", color=df_cxn_close_filt$"Test_Type", xlab="\nLoad Rate (NFPS)", ylab="Connection Close HTTP Object Retrieval Time (s, log10 scale)\n") + scale_x_continuous() + scale_y_log10() + stat_smooth(method = "loess", formula = y ~ x, size = 1) + theme(legend.title=element_blank()) + theme(axis.title.x = element_text(size=15), axis.title.y = element_text(size=15), axis.text.x = element_text(size=14), axis.text.y = element_text(size=14), legend.position = c(.2, .74))
 print (q)
 
 # Cxn-keepalive chart:

@@ -13,10 +13,7 @@ lapply(libs, require, character.only = T)
 base_dir <- "~/results/performance-no-load"
 
 # Ask for the sub-directory that the results are in:
-#test_dir_1 <- readline("What is name of directory?")
-
-# TEMP:
-test_dir_1 <- "20160513203601"
+test_dir_1 <- readline("What is name of directory?")
 
 base_dir_2 <- paste(base_dir, test_dir_1, sep = '/')
 
