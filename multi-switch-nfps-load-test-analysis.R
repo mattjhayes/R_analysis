@@ -407,6 +407,7 @@ print (q)
 q <- ggplot(data=df_ct_mosp_filt, aes(x=Load_Rate, y=Controller_Pkt_In, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Controller Packets Received per Interval (pkts, log10 scale)") + theme(legend.title=element_blank()) + scale_x_continuous() + scale_y_log10() + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
 print (q)
 
-
-
+# Controller CPU by Switches in Path
+q <- ggplot(data=df_ct_mosp_filt, aes(x=Load_Rate, y=Controller_CPU, fill=Test_Type, color=Test_Type)) + xlab("NFPS Load") + ylab("Controller CPU") + theme(legend.title=element_blank()) + scale_x_continuous() + scale_y_continuous() + stat_smooth(method = "loess") + theme(axis.title.x = element_text(size=12), axis.title.y = element_text(size=12))
+print (q)
 

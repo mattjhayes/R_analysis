@@ -101,34 +101,6 @@ fx_csv2df <- function(files_list, files, col_select, col_names) {
 }
 # ===================== MAIN PROGRAM ===================================
 
-#*** Timeliness of MAC learning updates applied to data plane
-#*** The relies on Open vSwitch snooping, and does not work for nmeta
-#*** as it does not apply FEs to data plane when MACs are learnt.
-
-#*** Notes:
-#*** nmeta2-active: TBD
-#*** nmeta2-passive: TBD
-#*** nmeta: TBD
-#*** simpleswitch: TBD
-#*** nosdn: TBD
-
-# Call function (see further up) to build file data:
-files_cp_snoop <- fx_build_file_data("post_process_control_plane_snoop_time_delta.csv", files_dir_2)
-
-print ("Reading result CSV files into a list")
-# Read the result CSV files into a list:
-files_list_cp_snoop <- lapply(files_cp_snoop$files, read.csv, header=FALSE)
-
-df_cp_snoop <- data.frame()
-for (i in 1:length(files_list_cp_snoop)) {
-    # Read data frame from list
-    df_temp <- files_list_cp_snoop[[i]]
-    df_temp$TestType <- unname(files_cp_snoop$dir_path[i])
-    names(df_temp) <- c("Test_Type", "Load_Rate", "DP_Apply_Timeliness", "DirPath")
-    print ("Doing rbind to accumulate row")
-    df_cp_snoop = rbind(df_cp_snoop, df_temp)
-}
-
 #---------------- Timeliness of packet flooding ------------------------
 #*** Timeliness of packet flooding ceasing (implying that CP has learnt
 #*** MAC...
@@ -198,7 +170,6 @@ for (i in 1:length(files_list_sv_pkts)) {
     print ("Doing rbind to accumulate row")
     df_sv_pkts = rbind(df_sv_pkts, df_temp)
 }
-
 
 #-------------------- Switch OS Analysis -------------------------------
 # Call function (see further up) to build file data:
